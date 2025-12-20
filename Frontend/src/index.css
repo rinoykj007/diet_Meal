@@ -1,0 +1,142 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Mealplan Design System - Light Theme */
+    --background: 60 10% 97%;
+    --foreground: 220 35% 20%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 35% 20%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 35% 20%;
+
+    /* Primary: Lime Green Accent */
+    --primary: 68 78% 55%;
+    --primary-foreground: 220 35% 15%;
+
+    /* Secondary: Light Gray */
+    --secondary: 60 5% 94%;
+    --secondary-foreground: 220 35% 20%;
+
+    /* Muted surfaces */
+    --muted: 60 5% 92%;
+    --muted-foreground: 220 15% 50%;
+
+    /* Accent: Same as primary for this design */
+    --accent: 68 78% 55%;
+    --accent-foreground: 220 35% 15%;
+
+    /* Dark Navy - for buttons and headers */
+    --navy: 220 35% 18%;
+    --navy-foreground: 0 0% 100%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 60 5% 88%;
+    --input: 60 5% 88%;
+    --ring: 68 78% 55%;
+
+    --radius: 1rem;
+
+    /* Custom tokens */
+    --lime: 68 78% 55%;
+    --lime-light: 68 78% 65%;
+    --lime-dark: 68 78% 45%;
+    
+    /* Diagonal stripes for progress bars */
+    --stripe-pattern: repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 4px,
+      hsl(var(--lime-dark) / 0.3) 4px,
+      hsl(var(--lime-dark) / 0.3) 8px
+    );
+  }
+
+  .dark {
+    --background: 220 35% 10%;
+    --foreground: 60 10% 95%;
+
+    --card: 220 35% 15%;
+    --card-foreground: 60 10% 95%;
+
+    --popover: 220 35% 15%;
+    --popover-foreground: 60 10% 95%;
+
+    --primary: 68 78% 55%;
+    --primary-foreground: 220 35% 10%;
+
+    --secondary: 220 30% 20%;
+    --secondary-foreground: 60 10% 95%;
+
+    --muted: 220 30% 20%;
+    --muted-foreground: 60 5% 60%;
+
+    --accent: 68 78% 55%;
+    --accent-foreground: 220 35% 10%;
+
+    --navy: 220 35% 90%;
+    --navy-foreground: 220 35% 10%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 220 30% 25%;
+    --input: 220 30% 25%;
+    --ring: 68 78% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    @apply font-bold tracking-tight;
+  }
+}
+
+@layer components {
+  .nutrient-bar {
+    @apply relative h-3 rounded-full overflow-hidden;
+    background: linear-gradient(
+      90deg,
+      hsl(var(--lime)) 0%,
+      hsl(var(--lime)) var(--progress, 50%),
+      hsl(var(--muted)) var(--progress, 50%),
+      hsl(var(--muted)) 100%
+    );
+  }
+  
+  .nutrient-bar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--stripe-pattern);
+    width: var(--progress, 50%);
+  }
+  
+  .floating-badge {
+    @apply bg-card rounded-full px-4 py-2 shadow-lg flex items-center gap-2 text-sm font-medium;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
