@@ -22,8 +22,8 @@ export default function GoogleAuthSuccess() {
       })
         .then(res => res.json())
         .then(data => {
-          if (data.success) {
-            localStorage.setItem('user', JSON.stringify(data.data));
+          if (data && data._id) {
+            localStorage.setItem('user', JSON.stringify(data));
 
             toast({
               title: 'Welcome!',
@@ -31,11 +31,11 @@ export default function GoogleAuthSuccess() {
             });
 
             // Redirect based on user role
-            if (data.data.roles?.includes('admin')) {
+            if (data.roles?.includes('admin')) {
               navigate('/admin/dashboard');
-            } else if (data.data.roles?.includes('provider')) {
+            } else if (data.roles?.includes('provider')) {
               navigate('/restaurant/dashboard');
-            } else if (data.data.roles?.includes('delivery-partner')) {
+            } else if (data.roles?.includes('delivery-partner')) {
               navigate('/delivery-partner/dashboard');
             } else {
               navigate('/dashboard');
