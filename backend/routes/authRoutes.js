@@ -24,13 +24,6 @@ router.get('/google/callback',
     session: false
   }),
   (req, res) => {
-    console.log('=== Google OAuth Callback ===');
-    console.log('User authenticated:', req.user);
-    console.log('User ID:', req.user?._id);
-    console.log('FRONTEND_URL env:', process.env.FRONTEND_URL);
-    console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
-    console.log('JWT_EXPIRE:', process.env.JWT_EXPIRE);
-
     // Generate JWT token
     const token = jwt.sign(
       { id: req.user._id },
@@ -38,13 +31,8 @@ router.get('/google/callback',
       { expiresIn: process.env.JWT_EXPIRE }
     );
 
-    console.log('Generated token:', token);
-
-    const redirectUrl = `${process.env.FRONTEND_URL}/auth/google/success?token=${token}`;
-    console.log('Redirecting to:', redirectUrl);
-
     // Redirect to frontend with token
-    res.redirect(redirectUrl);
+    res.redirect(`${process.env.FRONTEND_URL}/auth/google/success?token=${token}`);
   }
 );
 
