@@ -56,3 +56,7 @@ temp/
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
+
+# Seeder scripts (local only)
+backend/scripts/seedData.js
+seedData.js
