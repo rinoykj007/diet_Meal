@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="#10b981" stroke="#059669" stroke-width="2"/>
+
+  <!-- Fork on left -->
+  <g fill="#ffffff">
+    <rect x="30" y="30" width="3" height="40" rx="1.5"/>
+    <rect x="26" y="30" width="2" height="15" rx="1"/>
+    <rect x="31" y="30" width="2" height="15" rx="1"/>
+    <rect x="36" y="30" width="2" height="15" rx="1"/>
+  </g>
+
+  <!-- Spoon on right -->
+  <g fill="#ffffff">
+    <rect x="67" y="35" width="3" height="35" rx="1.5"/>
+    <ellipse cx="68.5" cy="32" rx="5" ry="6"/>
+  </g>
+
+  <!-- Plate/bowl in center -->
+  <circle cx="50" cy="55" r="12" fill="none" stroke="#ffffff" stroke-width="2.5"/>
+</svg>

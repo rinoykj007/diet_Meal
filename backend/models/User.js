@@ -19,6 +19,11 @@ const userSchema = new mongoose.Schema({
   },
   phone: String,
   avatarUrl: String,
+  googleId: {
+    type: String,
+    unique: true,
+    sparse: true // Allows null values to not be unique
+  },
   roles: [{
     type: String,
     enum: ['user', 'provider', 'admin', 'restaurant', 'delivery-partner'],

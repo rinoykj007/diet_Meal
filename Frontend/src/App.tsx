@@ -20,6 +20,7 @@ import Register from "./pages/auth/Register";
 import ProviderRegister from "./pages/auth/ProviderRegister";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
+import GoogleAuthSuccess from "./pages/auth/GoogleAuthSuccess";
 
 // User Pages
 import Dashboard from "./pages/user/Dashboard";
@@ -77,6 +78,7 @@ const App = () => (
             <Route path="/delivery-partner/login" element={<DeliveryPartnerLogin />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/auth/google/success" element={<GoogleAuthSuccess />} />
 
             {/* Protected User Routes */}
             <Route

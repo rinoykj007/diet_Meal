@@ -60,3 +60,7 @@ pnpm-lock.yaml
 # Seeder scripts (local only)
 backend/scripts/seedData.js
 seedData.js
+
+# Google OAuth credentials (NEVER commit these!)
+**/client_secret*.json
+client_secret*.json
