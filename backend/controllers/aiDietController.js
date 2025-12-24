@@ -1,5 +1,12 @@
 const { OpenRouter } = require('@openrouter/sdk');
 const AIDietRecommendation = require('../models/AIDietRecommendation');
+const AIDietPreference = require('../models/AIDietPreference');
+const {
+  calculateBMR,
+  calculateTDEE,
+  calculateMealBudgets,
+  calculateMacroTargets
+} = require('../utils/macroScoring');
 
 // Initialize OpenRouter client
 const openrouter = new OpenRouter({
@@ -344,5 +351,143 @@ exports.deleteRecommendation = async (req, res) => {
   } catch (error) {
     console.error('Error deleting recommendation:', error);
     res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Save/Update user's diet preferences (without generating AI recommendation)
+// @route   POST /api/ai-diet/preferences
+// @access  Private
+exports.saveUserPreferences = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const preferences = req.body;
+
+    // Find existing preferences or create new
+    let userPreference = await AIDietPreference.findOne({ userId });
+
+    if (userPreference) {
+      // Update existing preferences
+      Object.assign(userPreference, preferences);
+      await userPreference.save();
+    } else {
+      // Create new preferences
+      userPreference = await AIDietPreference.create({
+        userId,
+        ...preferences
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Preferences saved successfully',
+      data: userPreference
+    });
+
+  } catch (error) {
+    console.error('Error saving user preferences:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error saving preferences',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Get user's diet preferences with calculated BMR/TDEE
+// @route   GET /api/ai-diet/preferences
+// @access  Private
+exports.getUserPreferences = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    // Try to get the most recent AI diet recommendation first
+    const latestRecommendation = await AIDietRecommendation.findOne({ userId })
+      .sort({ createdAt: -1 })
+      .limit(1);
+
+    // Also check for saved preferences
+    const savedPreference = await AIDietPreference.findOne({ userId });
+
+    // Use latest recommendation preferences, fallback to saved preferences
+    const preferences = latestRecommendation?.preferences || savedPreference;
+
+    if (!preferences) {
+      return res.json({
+        success: true,
+        data: {
+          hasPreferences: false,
+          message: 'No preferences found. Please complete your profile in the AI Diet section.'
+        }
+      });
+    }
+
+    // Check if we have minimum required data for BMR calculation
+    const hasMinimumData = preferences.age && preferences.weight && preferences.height && preferences.gender;
+
+    if (!hasMinimumData) {
+      return res.json({
+        success: true,
+        data: {
+          hasPreferences: true,
+          bmr: null,
+          tdee: null,
+          mealBudgets: null,
+          dietaryRestrictions: preferences.dietaryRestrictions || [],
+          allergies: preferences.allergies || [],
+          healthGoals: preferences.healthGoals || [],
+          macroTargets: null,
+          mealsPerDay: preferences.mealsPerDay || 3,
+          activityLevel: preferences.activityLevel || 'moderate',
+          calorieTarget: preferences.calorieTarget || null,
+          warning: 'Incomplete profile: age, weight, height, and gender required for personalized recommendations'
+        }
+      });
+    }
+
+    // Calculate BMR and TDEE
+    const bmr = calculateBMR({
+      age: preferences.age,
+      weight: preferences.weight,
+      height: preferences.height,
+      gender: preferences.gender
+    });
+
+    const tdee = calculateTDEE(bmr, preferences.activityLevel || 'moderate');
+
+    // Calculate meal budgets with custom distribution
+    const mealBudgets = calculateMealBudgets(tdee);
+
+    // Calculate macro targets based on health goals
+    const macroTargets = calculateMacroTargets(tdee, preferences.healthGoals || []);
+
+    // Validate TDEE range
+    if (tdee && (tdee < 1200 || tdee > 5000)) {
+      console.warn(`TDEE ${tdee} is outside normal range for user ${userId}`);
+    }
+
+    res.json({
+      success: true,
+      data: {
+        hasPreferences: true,
+        bmr,
+        tdee,
+        mealBudgets,
+        dietaryRestrictions: preferences.dietaryRestrictions || [],
+        allergies: preferences.allergies || [],
+        healthGoals: preferences.healthGoals || [],
+        macroTargets,
+        mealsPerDay: preferences.mealsPerDay || 3,
+        activityLevel: preferences.activityLevel || 'moderate',
+        calorieTarget: preferences.calorieTarget || tdee
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching user preferences:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching preferences',
+      error: error.message
+    });
   }
 };

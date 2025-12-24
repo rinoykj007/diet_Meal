@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { restaurantAPI, dietFoodAPI, orderAPI } from '@/lib/api';
+import { restaurantAPI, dietFoodAPI, orderAPI, aiDietAPI } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
-import { ArrowLeft, MapPin, Phone, Mail, Star, ShoppingCart, Plus, Minus, Trash2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Phone, Mail, Star, ShoppingCart, Plus, Minus, Trash2, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -30,6 +32,27 @@ interface DietFood {
   image?: string;
   servingSize?: string;
   isAvailable: boolean;
+  personalized?: {
+    calorieMatch: boolean;
+    macroScore: number;
+    matchReasons: string[];
+    badges: string[];
+  };
+}
+
+interface UserPreferences {
+  hasPreferences: boolean;
+  bmr?: number;
+  tdee?: number;
+  mealBudgets?: {
+    breakfast: { target: number; min: number; max: number };
+    lunch: { target: number; min: number; max: number };
+    dinner: { target: number; min: number; max: number };
+    snacks: { target: number; min: number; max: number };
+  };
+  dietaryRestrictions?: string[];
+  allergies?: string[];
+  healthGoals?: string[];
 }
 
 interface Restaurant {
@@ -68,6 +91,9 @@ const RestaurantDetails = () => {
   const [selectedDietType, setSelectedDietType] = useState('');
   const [showCheckout, setShowCheckout] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showPersonalized, setShowPersonalized] = useState(false);
+  const [userPreferences, setUserPreferences] = useState<UserPreferences | null>(null);
+  const [selectedMealType, setSelectedMealType] = useState<string>('lunch');
 
   // Delivery form
   const [deliveryAddress, setDeliveryAddress] = useState({
@@ -80,11 +106,30 @@ const RestaurantDetails = () => {
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
+    fetchUserPreferences();
+  }, []);
+
+  useEffect(() => {
     if (id) {
       fetchRestaurantDetails();
       fetchDietFoods();
     }
-  }, [id, selectedDietType]);
+  }, [id, selectedDietType, showPersonalized, selectedMealType]);
+
+  const fetchUserPreferences = async () => {
+    try {
+      const response = await aiDietAPI.getUserPreferences();
+      setUserPreferences(response.data.data);
+
+      // Auto-enable personalized mode if user has complete preferences
+      if (response.data.data.hasPreferences && response.data.data.tdee) {
+        setShowPersonalized(true);
+      }
+    } catch (error: any) {
+      console.log('No user preferences found:', error);
+      setUserPreferences({ hasPreferences: false });
+    }
+  };
 
   const fetchRestaurantDetails = async () => {
     try {
@@ -102,7 +147,19 @@ const RestaurantDetails = () => {
   const fetchDietFoods = async () => {
     try {
       setLoading(true);
-      const response = await dietFoodAPI.getByRestaurant(id!, selectedDietType);
+      const params: any = { restaurantId: id };
+
+      if (selectedDietType) {
+        params.dietType = selectedDietType;
+      }
+
+      // Add personalization parameters
+      if (showPersonalized && userPreferences?.hasPreferences) {
+        params.personalized = 'true';
+        params.mealType = selectedMealType;
+      }
+
+      const response = await dietFoodAPI.getAll(params);
       setDietFoods(response.data.data);
     } catch (error: any) {
       toast({
@@ -204,6 +261,31 @@ const RestaurantDetails = () => {
     return colors[type] || 'bg-gray-100 text-gray-800';
   };
 
+  const getPersonalizedBadgeInfo = (badge: string) => {
+    const badgeMap: Record<string, { label: string; color: string; icon: any }> = {
+      optimal_calories: { label: 'Optimal Calories', color: 'bg-green-100 text-green-800 border-green-300', icon: CheckCircle2 },
+      low_calories: { label: 'Low Calories', color: 'bg-blue-100 text-blue-800 border-blue-300', icon: CheckCircle2 },
+      high_calories: { label: 'High Calories', color: 'bg-red-100 text-red-800 border-red-300', icon: AlertCircle },
+      high_protein: { label: 'High Protein', color: 'bg-purple-100 text-purple-800 border-purple-300', icon: Sparkles },
+      low_carb: { label: 'Low Carb', color: 'bg-orange-100 text-orange-800 border-orange-300', icon: Sparkles },
+      low_fat: { label: 'Low Fat', color: 'bg-yellow-100 text-yellow-800 border-yellow-300', icon: Sparkles },
+      keto_friendly: { label: 'Keto Friendly', color: 'bg-purple-100 text-purple-800 border-purple-300', icon: Sparkles },
+      vegan: { label: 'Vegan', color: 'bg-green-100 text-green-800 border-green-300', icon: Sparkles },
+      vegetarian: { label: 'Vegetarian', color: 'bg-lime-100 text-lime-800 border-lime-300', icon: Sparkles },
+      gluten_free: { label: 'Gluten Free', color: 'bg-yellow-100 text-yellow-800 border-yellow-300', icon: Sparkles },
+    };
+    return badgeMap[badge] || { label: badge, color: 'bg-gray-100 text-gray-800 border-gray-300', icon: Sparkles };
+  };
+
+  const getCalorieBadgeColor = (food: DietFood) => {
+    if (!food.personalized) return '';
+    const { calorieMatch, macroScore } = food.personalized;
+
+    if (macroScore >= 80 && calorieMatch) return 'border-green-500 bg-green-50';
+    if (macroScore >= 60) return 'border-blue-500 bg-blue-50';
+    return 'border-gray-300';
+  };
+
   if (!restaurant) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -298,6 +380,52 @@ const RestaurantDetails = () => {
           </CardHeader>
         </Card>
 
+        {/* Personalization Controls */}
+        {userPreferences?.hasPreferences && userPreferences.tdee && (
+          <Card className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center gap-3">
+                  <Sparkles className="h-5 w-5 text-blue-600" />
+                  <div>
+                    <CardTitle className="text-lg">Personalized Menu</CardTitle>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {selectedMealType.charAt(0).toUpperCase() + selectedMealType.slice(1)} budget: ~{userPreferences.mealBudgets?.[selectedMealType as keyof typeof userPreferences.mealBudgets]?.target} cal
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="personalized-toggle-detail" className="text-sm font-medium">
+                    {showPersonalized ? 'ON' : 'OFF'}
+                  </Label>
+                  <Switch
+                    id="personalized-toggle-detail"
+                    checked={showPersonalized}
+                    onCheckedChange={setShowPersonalized}
+                  />
+                </div>
+              </div>
+            </CardHeader>
+            {showPersonalized && (
+              <CardContent className="pt-0">
+                <div className="flex gap-2 flex-wrap">
+                  <Label className="text-sm font-medium text-gray-700 mt-2">Meal Type:</Label>
+                  {['breakfast', 'lunch', 'dinner', 'snacks'].map((mealType) => (
+                    <Button
+                      key={mealType}
+                      variant={selectedMealType === mealType ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedMealType(mealType)}
+                    >
+                      {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
+                    </Button>
+                  ))}
+                </div>
+              </CardContent>
+            )}
+          </Card>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Menu Section */}
           <div className="lg:col-span-2">
@@ -341,7 +469,7 @@ const RestaurantDetails = () => {
             {!loading && (
               <div className="space-y-4">
                 {dietFoods.map((food) => (
-                  <Card key={food._id}>
+                  <Card key={food._id} className={`${showPersonalized && food.personalized ? getCalorieBadgeColor(food) : ''} ${showPersonalized && food.personalized?.macroScore >= 80 ? 'border-2' : ''}`}>
                     <CardContent className="p-4">
                       <div className="flex gap-4">
                         {food.image && (
@@ -354,18 +482,50 @@ const RestaurantDetails = () => {
                         <div className="flex-1">
                           <div className="flex justify-between items-start mb-2">
                             <div>
-                              <h3 className="font-semibold text-lg">{food.name}</h3>
-                              <Badge className={getDietTypeBadgeColor(food.dietType)} variant="secondary">
-                                {food.dietType}
-                              </Badge>
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="font-semibold text-lg">{food.name}</h3>
+                                {showPersonalized && food.personalized && food.personalized.macroScore >= 80 && (
+                                  <Badge className="bg-green-100 text-green-800 border-green-300">
+                                    <Sparkles className="h-3 w-3 mr-1" />
+                                    Top Match
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex flex-wrap gap-1 mb-1">
+                                <Badge className={getDietTypeBadgeColor(food.dietType)} variant="secondary">
+                                  {food.dietType}
+                                </Badge>
+                                {showPersonalized && food.personalized?.badges.slice(0, 3).map((badge, idx) => {
+                                  const badgeInfo = getPersonalizedBadgeInfo(badge);
+                                  const Icon = badgeInfo.icon;
+                                  return (
+                                    <Badge key={idx} className={badgeInfo.color} variant="secondary">
+                                      <Icon className="h-3 w-3 mr-1" />
+                                      {badgeInfo.label}
+                                    </Badge>
+                                  );
+                                })}
+                              </div>
                             </div>
                             <div className="text-right">
                               <p className="text-xl font-bold text-primary">${food.price.toFixed(2)}</p>
                               {food.servingSize && (
                                 <p className="text-xs text-gray-500">{food.servingSize}</p>
                               )}
+                              {showPersonalized && food.personalized && (
+                                <p className="text-xs font-semibold text-blue-600 mt-1">
+                                  Score: {food.personalized.macroScore}/100
+                                </p>
+                              )}
                             </div>
                           </div>
+
+                          {showPersonalized && food.personalized && food.personalized.matchReasons.length > 0 && (
+                            <div className="mb-2 p-2 bg-blue-50 rounded text-xs text-blue-800">
+                              <strong>Why recommended:</strong> {food.personalized.matchReasons.join(' • ')}
+                            </div>
+                          )}
+
                           <p className="text-sm text-gray-600 mb-2">{food.description}</p>
                           <div className="flex justify-between items-center">
                             <div className="text-xs text-gray-500 space-x-3">

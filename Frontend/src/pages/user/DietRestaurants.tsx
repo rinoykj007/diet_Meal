@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { restaurantAPI } from '@/lib/api';
-import { Search, MapPin, Star, ChefHat } from 'lucide-react';
+import { restaurantAPI, aiDietAPI } from '@/lib/api';
+import { Search, MapPin, Star, ChefHat, Sparkles, AlertCircle, Calculator } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 
 interface Restaurant {
@@ -23,6 +27,24 @@ interface Restaurant {
   rating: number;
   totalReviews: number;
   phone?: string;
+  matchingFoodsCount?: number;
+}
+
+interface UserPreferences {
+  hasPreferences: boolean;
+  bmr?: number;
+  tdee?: number;
+  mealBudgets?: {
+    breakfast: { target: number; min: number; max: number };
+    lunch: { target: number; min: number; max: number };
+    dinner: { target: number; min: number; max: number };
+    snacks: { target: number; min: number; max: number };
+  };
+  dietaryRestrictions?: string[];
+  allergies?: string[];
+  healthGoals?: string[];
+  message?: string;
+  warning?: string;
 }
 
 const DietRestaurants = () => {
@@ -30,6 +52,18 @@ const DietRestaurants = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDietType, setSelectedDietType] = useState('');
+  const [showPersonalized, setShowPersonalized] = useState(false);
+  const [userPreferences, setUserPreferences] = useState<UserPreferences | null>(null);
+  const [selectedMealType, setSelectedMealType] = useState<string>('lunch');
+  const [showTDEEModal, setShowTDEEModal] = useState(true); // TDEE confirmation modal
+  const [tdeeModalMode, setTdeeModalMode] = useState<'confirm' | 'setup' | 'edit'>('setup'); // confirm, setup, edit
+  const [quickTDEEData, setQuickTDEEData] = useState({
+    age: '',
+    gender: '',
+    height: '',
+    weight: '',
+    activityLevel: 'moderate'
+  });
   const { toast } = useToast();
 
   const dietTypes = [
@@ -46,8 +80,34 @@ const DietRestaurants = () => {
   ];
 
   useEffect(() => {
+    fetchUserPreferences();
+  }, []);
+
+  useEffect(() => {
     fetchRestaurants();
-  }, [selectedDietType]);
+  }, [selectedDietType, showPersonalized, selectedMealType]);
+
+  const fetchUserPreferences = async () => {
+    try {
+      const response = await aiDietAPI.getUserPreferences();
+      const prefs = response.data.data;
+      setUserPreferences(prefs);
+
+      // Check if TDEE exists
+      if (prefs.hasPreferences && prefs.tdee) {
+        // TDEE exists - show confirmation modal
+        setTdeeModalMode('confirm');
+        setShowPersonalized(true);
+      } else {
+        // TDEE doesn't exist - show setup modal
+        setTdeeModalMode('setup');
+      }
+    } catch (error: any) {
+      console.log('No user preferences found:', error);
+      setUserPreferences({ hasPreferences: false });
+      setTdeeModalMode('setup');
+    }
+  };
 
   const fetchRestaurants = async () => {
     try {
@@ -58,6 +118,12 @@ const DietRestaurants = () => {
       }
       if (searchTerm) {
         params.search = searchTerm;
+      }
+
+      // Add personalization parameters
+      if (showPersonalized && userPreferences?.hasPreferences) {
+        params.personalized = 'true';
+        params.mealType = selectedMealType;
       }
 
       const response = await restaurantAPI.getAll(params);
@@ -78,6 +144,65 @@ const DietRestaurants = () => {
     fetchRestaurants();
   };
 
+  // Handler: User clicks OK (use existing TDEE)
+  const handleConfirmTDEE = () => {
+    setShowTDEEModal(false);
+    setShowPersonalized(true);
+    fetchRestaurants();
+  };
+
+  // Handler: User clicks Edit (update TDEE)
+  const handleEditTDEE = () => {
+    setTdeeModalMode('edit');
+  };
+
+  // Handler: Save/Update TDEE to database
+  const handleSaveTDEE = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validate required fields
+    if (!quickTDEEData.age || !quickTDEEData.gender || !quickTDEEData.height || !quickTDEEData.weight) {
+      toast({
+        title: 'Missing Information',
+        description: 'Please fill in all required fields (age, gender, height, weight)',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      // Save/Update preferences to database
+      await aiDietAPI.saveUserPreferences({
+        age: Number(quickTDEEData.age),
+        gender: quickTDEEData.gender as 'male' | 'female',
+        height: Number(quickTDEEData.height),
+        weight: Number(quickTDEEData.weight),
+        activityLevel: quickTDEEData.activityLevel
+      });
+
+      // Fetch updated preferences
+      await fetchUserPreferences();
+
+      // Close modal and enable personalized mode
+      setShowTDEEModal(false);
+      setShowPersonalized(true);
+
+      toast({
+        title: 'TDEE Saved!',
+        description: 'Your personalized diet plan is ready',
+      });
+
+      // Refresh restaurants
+      fetchRestaurants();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.response?.data?.message || 'Failed to save TDEE',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const getDietTypeBadgeColor = (type: string) => {
     const colors: Record<string, string> = {
       keto: 'bg-purple-100 text-purple-800',
@@ -95,6 +220,158 @@ const DietRestaurants = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
+      {/* TDEE Confirmation/Setup Modal - Blocks access until TDEE is confirmed/set */}
+      {showTDEEModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-2xl">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Calculator className="h-6 w-6 text-blue-600" />
+                <CardTitle>
+                  {tdeeModalMode === 'confirm' && 'Confirm Your TDEE'}
+                  {tdeeModalMode === 'setup' && 'Set Up Your TDEE'}
+                  {tdeeModalMode === 'edit' && 'Update Your TDEE'}
+                </CardTitle>
+              </div>
+              <CardDescription>
+                {tdeeModalMode === 'confirm' && 'We found your previously calculated TDEE. Would you like to use it or update?'}
+                {tdeeModalMode === 'setup' && 'Enter your details to calculate your Total Daily Energy Expenditure for personalized recommendations'}
+                {tdeeModalMode === 'edit' && 'Update your details to recalculate your TDEE'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* CONFIRM MODE - Show existing TDEE with OK/Edit buttons */}
+              {tdeeModalMode === 'confirm' && userPreferences && (
+                <div className="space-y-6">
+                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg">
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600 mb-2">Your Daily Calorie Target</p>
+                      <p className="text-5xl font-bold text-blue-600">{userPreferences.tdee}</p>
+                      <p className="text-sm text-gray-500 mt-1">calories/day</p>
+                    </div>
+                    <div className="grid grid-cols-4 gap-3 mt-6">
+                      <div className="text-center">
+                        <p className="text-xs text-gray-600">Breakfast</p>
+                        <p className="text-lg font-semibold text-blue-600">{userPreferences.mealBudgets?.breakfast.target}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs text-gray-600">Lunch</p>
+                        <p className="text-lg font-semibold text-green-600">{userPreferences.mealBudgets?.lunch.target}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs text-gray-600">Dinner</p>
+                        <p className="text-lg font-semibold text-orange-600">{userPreferences.mealBudgets?.dinner.target}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs text-gray-600">Snacks</p>
+                        <p className="text-lg font-semibold text-purple-600">{userPreferences.mealBudgets?.snacks.target}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <Button className="flex-1" size="lg" onClick={handleConfirmTDEE}>
+                      OK - Use This TDEE
+                    </Button>
+                    <Button variant="outline" size="lg" onClick={handleEditTDEE}>
+                      Edit - Update TDEE
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* SETUP/EDIT MODE - Show form to enter/update details */}
+              {(tdeeModalMode === 'setup' || tdeeModalMode === 'edit') && (
+                <form onSubmit={handleSaveTDEE} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="modal-age">Age (years) *</Label>
+                      <Input
+                        id="modal-age"
+                        type="number"
+                        placeholder="e.g., 30"
+                        value={quickTDEEData.age}
+                        onChange={(e) => setQuickTDEEData({ ...quickTDEEData, age: e.target.value })}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="modal-gender">Gender *</Label>
+                      <Select
+                        value={quickTDEEData.gender}
+                        onValueChange={(value) => setQuickTDEEData({ ...quickTDEEData, gender: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="male">Male</SelectItem>
+                          <SelectItem value="female">Female</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="modal-height">Height (cm) *</Label>
+                      <Input
+                        id="modal-height"
+                        type="number"
+                        placeholder="e.g., 170"
+                        value={quickTDEEData.height}
+                        onChange={(e) => setQuickTDEEData({ ...quickTDEEData, height: e.target.value })}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="modal-weight">Weight (kg) *</Label>
+                      <Input
+                        id="modal-weight"
+                        type="number"
+                        placeholder="e.g., 70"
+                        value={quickTDEEData.weight}
+                        onChange={(e) => setQuickTDEEData({ ...quickTDEEData, weight: e.target.value })}
+                        required
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <Label htmlFor="modal-activity">Activity Level</Label>
+                      <Select
+                        value={quickTDEEData.activityLevel}
+                        onValueChange={(value) => setQuickTDEEData({ ...quickTDEEData, activityLevel: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select activity level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="sedentary">Sedentary (little or no exercise)</SelectItem>
+                          <SelectItem value="light">Light (exercise 1-3 days/week)</SelectItem>
+                          <SelectItem value="moderate">Moderate (exercise 3-5 days/week)</SelectItem>
+                          <SelectItem value="active">Active (exercise 6-7 days/week)</SelectItem>
+                          <SelectItem value="very_active">Very Active (intense exercise daily)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <Button type="submit" className="flex-1" size="lg">
+                      {tdeeModalMode === 'setup' ? 'Calculate & Save TDEE' : 'Update TDEE'}
+                    </Button>
+                    {tdeeModalMode === 'edit' && (
+                      <Button type="button" variant="outline" size="lg" onClick={() => setTdeeModalMode('confirm')}>
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
+                </form>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
@@ -103,6 +380,63 @@ const DietRestaurants = () => {
             Browse diet-focused restaurants and order healthy meals
           </p>
         </div>
+
+
+        {/* Personalization Controls */}
+        {userPreferences?.hasPreferences && userPreferences.tdee && (
+          <Card className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Sparkles className="h-5 w-5 text-blue-600" />
+                  <div>
+                    <CardTitle className="text-lg">Personalized Recommendations</CardTitle>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Your daily target: {userPreferences.tdee} cal | {selectedMealType.charAt(0).toUpperCase() + selectedMealType.slice(1)} budget: ~{userPreferences.mealBudgets?.[selectedMealType as keyof typeof userPreferences.mealBudgets]?.target} cal
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="personalized-toggle" className="text-sm font-medium">
+                    {showPersonalized ? 'ON' : 'OFF'}
+                  </Label>
+                  <Switch
+                    id="personalized-toggle"
+                    checked={showPersonalized}
+                    onCheckedChange={setShowPersonalized}
+                  />
+                </div>
+              </div>
+            </CardHeader>
+            {showPersonalized && (
+              <CardContent className="pt-0">
+                <div className="flex gap-2">
+                  <Label className="text-sm font-medium text-gray-700 mt-2">Meal Type:</Label>
+                  {['breakfast', 'lunch', 'dinner', 'snacks'].map((mealType) => (
+                    <Button
+                      key={mealType}
+                      variant={selectedMealType === mealType ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedMealType(mealType)}
+                    >
+                      {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
+                    </Button>
+                  ))}
+                </div>
+              </CardContent>
+            )}
+          </Card>
+        )}
+
+        {/* Warning if incomplete profile */}
+        {userPreferences?.warning && showPersonalized && (
+          <Alert className="mb-6 border-yellow-200 bg-yellow-50">
+            <AlertCircle className="h-4 w-4 text-yellow-600" />
+            <AlertDescription className="text-yellow-900">
+              {userPreferences.warning}
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Search and Filters */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
@@ -150,8 +484,24 @@ const DietRestaurants = () => {
           <div className="text-center py-12 bg-white rounded-lg shadow-sm">
             <ChefHat className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">No restaurants found</h3>
-            <p className="text-gray-600">Try adjusting your search or filters</p>
+            <p className="text-gray-600 mb-4">
+              {showPersonalized
+                ? `No restaurants have foods matching your ${selectedMealType} preferences. Try a different meal type or turn off personalization.`
+                : 'Try adjusting your search or filters'}
+            </p>
+            {showPersonalized && (
+              <Button variant="outline" onClick={() => setShowPersonalized(false)}>
+                View All Restaurants
+              </Button>
+            )}
           </div>
+        )}
+
+        {/* Results Count */}
+        {!loading && restaurants.length > 0 && showPersonalized && (
+          <p className="text-sm text-gray-600 mb-4">
+            Showing {restaurants.length} restaurant{restaurants.length !== 1 ? 's' : ''} with foods matching your {selectedMealType} preferences
+          </p>
         )}
 
         {!loading && restaurants.length > 0 && (
@@ -216,6 +566,16 @@ const DietRestaurants = () => {
                       <p className="text-xs text-gray-500 mt-2">
                         {restaurant.totalReviews} review{restaurant.totalReviews !== 1 ? 's' : ''}
                       </p>
+                    )}
+
+                    {/* Matching Foods Count (Personalized Mode) */}
+                    {showPersonalized && restaurant.matchingFoodsCount !== undefined && (
+                      <div className="mt-2">
+                        <Badge variant="secondary" className="bg-green-100 text-green-800">
+                          <Sparkles className="h-3 w-3 mr-1" />
+                          {restaurant.matchingFoodsCount} matching food{restaurant.matchingFoodsCount !== 1 ? 's' : ''}
+                        </Badge>
+                      </div>
                     )}
                   </CardContent>
                 </Card>

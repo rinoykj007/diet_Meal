@@ -1,12 +1,25 @@
 const DietFood = require('../models/DietFood');
 const Restaurant = require('../models/Restaurant');
+const AIDietRecommendation = require('../models/AIDietRecommendation');
+const AIDietPreference = require('../models/AIDietPreference');
+const {
+  calculateBMR,
+  calculateTDEE,
+  calculateMealBudgets,
+  calculateMacroTargets,
+  calculateMacroScore,
+  matchesDietaryRestrictions,
+  containsAllergens,
+  generateMatchReasons,
+  generateBadges
+} = require('../utils/macroScoring');
 
 // @desc    Get all diet foods (public)
 // @route   GET /api/diet-foods
 // @access  Public
 exports.getDietFoods = async (req, res) => {
   try {
-    const { restaurantId, dietType, search, minCalories, maxCalories } = req.query;
+    const { restaurantId, dietType, search, minCalories, maxCalories, personalized, mealType } = req.query;
 
     let query = { isAvailable: true };
 
@@ -22,7 +35,58 @@ exports.getDietFoods = async (req, res) => {
       query.$text = { $search: search };
     }
 
-    if (minCalories || maxCalories) {
+    // Personalized filtering
+    if (personalized === 'true' && req.user) {
+      const userId = req.user._id;
+
+      // Get user preferences
+      const latestRecommendation = await AIDietRecommendation.findOne({ userId })
+        .sort({ createdAt: -1 })
+        .limit(1);
+      const savedPreference = await AIDietPreference.findOne({ userId });
+      const preferences = latestRecommendation?.preferences || savedPreference;
+
+      if (preferences) {
+        // Calculate BMR and TDEE
+        const bmr = calculateBMR({
+          age: preferences.age,
+          weight: preferences.weight,
+          height: preferences.height,
+          gender: preferences.gender
+        });
+        const tdee = calculateTDEE(bmr, preferences.activityLevel || 'moderate');
+        const mealBudgets = calculateMealBudgets(tdee);
+
+        // Apply meal-specific calorie filtering
+        if (mealBudgets && mealType && mealBudgets[mealType]) {
+          query.calories = {
+            $gte: mealBudgets[mealType].min,
+            $lte: mealBudgets[mealType].max
+          };
+        }
+
+        // Filter by dietary restrictions
+        if (preferences.dietaryRestrictions && preferences.dietaryRestrictions.length > 0) {
+          query.dietType = { $in: preferences.dietaryRestrictions };
+        }
+
+        // Exclude foods with allergens
+        if (preferences.allergies && preferences.allergies.length > 0) {
+          const allergiesLower = preferences.allergies.map(a => a.toLowerCase());
+          query.$and = query.$and || [];
+          allergiesLower.forEach(allergy => {
+            query.$and.push({
+              $or: [
+                { allergens: { $exists: false } },
+                { allergens: { $size: 0 } },
+                { allergens: { $not: { $regex: allergy, $options: 'i' } } }
+              ]
+            });
+          });
+        }
+      }
+    } else if (minCalories || maxCalories) {
+      // Manual calorie filtering (non-personalized)
       query.calories = {};
       if (minCalories) query.calories.$gte = Number(minCalories);
       if (maxCalories) query.calories.$lte = Number(maxCalories);
@@ -30,14 +94,80 @@ exports.getDietFoods = async (req, res) => {
 
     const dietFoods = await DietFood.find(query)
       .populate('restaurantId', 'name address image rating')
-      .sort({ rating: -1, createdAt: -1 });
+      .sort({ rating: -1, createdAt: -1 })
+      .lean();
+
+    // Add personalized metadata if personalized mode is on
+    let enrichedFoods = dietFoods;
+    if (personalized === 'true' && req.user) {
+      const userId = req.user._id;
+      const latestRecommendation = await AIDietRecommendation.findOne({ userId })
+        .sort({ createdAt: -1 })
+        .limit(1);
+      const savedPreference = await AIDietPreference.findOne({ userId });
+      const preferences = latestRecommendation?.preferences || savedPreference;
+
+      if (preferences) {
+        const bmr = calculateBMR({
+          age: preferences.age,
+          weight: preferences.weight,
+          height: preferences.height,
+          gender: preferences.gender
+        });
+        const tdee = calculateTDEE(bmr, preferences.activityLevel || 'moderate');
+        const mealBudgets = calculateMealBudgets(tdee);
+        const macroTargets = calculateMacroTargets(tdee, preferences.healthGoals || []);
+
+        enrichedFoods = dietFoods.map(food => {
+          const mealBudget = mealType && mealBudgets ? mealBudgets[mealType] : null;
+          const calorieMatch = mealBudget
+            ? food.calories >= mealBudget.min && food.calories <= mealBudget.max
+            : true;
+
+          const macroScore = calculateMacroScore(
+            food,
+            macroTargets,
+            preferences.mealsPerDay || 3,
+            preferences.healthGoals || []
+          );
+
+          const matchReasons = generateMatchReasons(
+            food,
+            mealBudget,
+            macroScore,
+            preferences.healthGoals || []
+          );
+
+          const badges = generateBadges(
+            food,
+            mealBudget,
+            macroScore,
+            preferences.healthGoals || []
+          );
+
+          return {
+            ...food,
+            personalized: {
+              calorieMatch,
+              macroScore,
+              matchReasons,
+              badges
+            }
+          };
+        });
+
+        // Sort by macro score (best matches first)
+        enrichedFoods.sort((a, b) => b.personalized.macroScore - a.personalized.macroScore);
+      }
+    }
 
     res.json({
       success: true,
-      count: dietFoods.length,
-      data: dietFoods
+      count: enrichedFoods.length,
+      data: enrichedFoods
     });
   } catch (error) {
+    console.error('Error in getDietFoods:', error);
     res.status(500).json({
       success: false,
       message: 'Server error',

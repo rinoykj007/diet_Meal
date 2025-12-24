@@ -406,6 +406,22 @@ export const aiDietAPI = {
     api.put(`/ai-diet/${id}/rate`, { rating, feedback }),
 
   delete: (id: string) => api.delete(`/ai-diet/${id}`),
+
+  // Get user preferences with BMR/TDEE calculations
+  getUserPreferences: () => api.get('/ai-diet/preferences'),
+
+  // Save user preferences (without generating full AI plan)
+  saveUserPreferences: (preferences: {
+    dietaryRestrictions?: string[];
+    healthGoals?: string[];
+    allergies?: string[];
+    preferredCuisines?: string[];
+    age?: number;
+    gender?: 'male' | 'female';
+    height?: number;
+    weight?: number;
+    calorieTarget?: number;
+  }) => api.post('/ai-diet/preferences', preferences),
 };
 
 // Shopping List Request API

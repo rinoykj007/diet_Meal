@@ -1,11 +1,19 @@
 const Restaurant = require('../models/Restaurant');
+const DietFood = require('../models/DietFood');
+const AIDietRecommendation = require('../models/AIDietRecommendation');
+const AIDietPreference = require('../models/AIDietPreference');
+const {
+  calculateBMR,
+  calculateTDEE,
+  calculateMealBudgets
+} = require('../utils/macroScoring');
 
 // @desc    Get all restaurants (public - approved only)
 // @route   GET /api/restaurants
 // @access  Public
 exports.getRestaurants = async (req, res) => {
   try {
-    const { dietType, search } = req.query;
+    const { dietType, search, personalized, mealType } = req.query;
 
     let query = { isApproved: true, isActive: true };
 
@@ -19,7 +27,95 @@ exports.getRestaurants = async (req, res) => {
 
     const restaurants = await Restaurant.find(query)
       .populate('ownerId', 'fullName email')
-      .sort({ rating: -1, createdAt: -1 });
+      .sort({ rating: -1, createdAt: -1 })
+      .lean();
+
+    // If personalized mode, filter restaurants by food availability
+    if (personalized === 'true' && req.user) {
+      const userId = req.user._id;
+
+      // Get user preferences
+      const latestRecommendation = await AIDietRecommendation.findOne({ userId })
+        .sort({ createdAt: -1 })
+        .limit(1);
+      const savedPreference = await AIDietPreference.findOne({ userId });
+      const preferences = latestRecommendation?.preferences || savedPreference;
+
+      if (preferences) {
+        // Calculate BMR and TDEE
+        const bmr = calculateBMR({
+          age: preferences.age,
+          weight: preferences.weight,
+          height: preferences.height,
+          gender: preferences.gender
+        });
+        const tdee = calculateTDEE(bmr, preferences.activityLevel || 'moderate');
+        const mealBudgets = calculateMealBudgets(tdee);
+
+        // Build food query based on user preferences
+        let foodQuery = { isAvailable: true };
+
+        // Apply meal-specific calorie filtering
+        if (mealBudgets && mealType && mealBudgets[mealType]) {
+          foodQuery.calories = {
+            $gte: mealBudgets[mealType].min,
+            $lte: mealBudgets[mealType].max
+          };
+        }
+
+        // Filter by dietary restrictions
+        if (preferences.dietaryRestrictions && preferences.dietaryRestrictions.length > 0) {
+          foodQuery.dietType = { $in: preferences.dietaryRestrictions };
+        }
+
+        // Exclude foods with allergens
+        if (preferences.allergies && preferences.allergies.length > 0) {
+          const allergiesLower = preferences.allergies.map(a => a.toLowerCase());
+          foodQuery.$and = foodQuery.$and || [];
+          allergiesLower.forEach(allergy => {
+            foodQuery.$and.push({
+              $or: [
+                { allergens: { $exists: false } },
+                { allergens: { $size: 0 } },
+                { allergens: { $not: { $regex: allergy, $options: 'i' } } }
+              ]
+            });
+          });
+        }
+
+        // Get restaurants with matching foods
+        const restaurantIds = restaurants.map(r => r._id);
+        foodQuery.restaurantId = { $in: restaurantIds };
+
+        const matchingFoods = await DietFood.find(foodQuery).select('restaurantId').lean();
+        const restaurantsWithMatchingFoods = new Set(
+          matchingFoods.map(f => f.restaurantId.toString())
+        );
+
+        // Count matching foods per restaurant
+        const foodCounts = matchingFoods.reduce((acc, food) => {
+          const restId = food.restaurantId.toString();
+          acc[restId] = (acc[restId] || 0) + 1;
+          return acc;
+        }, {});
+
+        // Filter and enrich restaurants
+        const enrichedRestaurants = restaurants
+          .filter(r => restaurantsWithMatchingFoods.has(r._id.toString()))
+          .map(r => ({
+            ...r,
+            matchingFoodsCount: foodCounts[r._id.toString()] || 0
+          }))
+          .sort((a, b) => b.matchingFoodsCount - a.matchingFoodsCount);
+
+        return res.json({
+          success: true,
+          count: enrichedRestaurants.length,
+          data: enrichedRestaurants,
+          personalized: true
+        });
+      }
+    }
 
     res.json({
       success: true,
@@ -27,6 +123,7 @@ exports.getRestaurants = async (req, res) => {
       data: restaurants
     });
   } catch (error) {
+    console.error('Error in getRestaurants:', error);
     res.status(500).json({
       success: false,
       message: 'Server error',

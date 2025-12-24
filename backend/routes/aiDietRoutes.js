@@ -5,7 +5,9 @@ const {
   getMyRecommendations,
   getRecommendation,
   rateRecommendation,
-  deleteRecommendation
+  deleteRecommendation,
+  getUserPreferences,
+  saveUserPreferences
 } = require('../controllers/aiDietController');
 const { protect } = require('../middleware/auth');
 
@@ -17,6 +19,11 @@ router.post('/generate', generateDietRecommendation);
 
 // Get user's recommendations
 router.get('/my-recommendations', getMyRecommendations);
+
+// Get or save user preferences
+router.route('/preferences')
+  .get(getUserPreferences)
+  .post(saveUserPreferences);
 
 // Get, rate, or delete specific recommendation
 router.route('/:id')
