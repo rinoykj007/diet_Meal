@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Checkbox } from '@/components/ui/checkbox';
 import api, { authAPI } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { Users, Search, Mail, Phone, Calendar, Shield, Edit, Key } from 'lucide-react';
+import { Users, Search, Mail, Phone, Calendar, Shield, Edit, Key, Trash2 } from 'lucide-react';
 
 interface User {
   _id: string;
@@ -40,6 +40,10 @@ export default function AdminUsers() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [resetting, setResetting] = useState(false);
+
+  // Delete User Dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const { toast } = useToast();
 
@@ -169,6 +173,34 @@ export default function AdminUsers() {
       });
     } finally {
       setResetting(false);
+    }
+  };
+
+  const handleOpenDeleteDialog = (user: User) => {
+    setSelectedUser(user);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+
+    try {
+      setDeleting(true);
+      await authAPI.deleteUser(selectedUser._id);
+      toast({
+        title: 'Success',
+        description: `User ${selectedUser.email} deleted successfully`,
+      });
+      setDeleteDialogOpen(false);
+      fetchUsers();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.response?.data?.message || 'Failed to delete user',
+        variant: 'destructive',
+      });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -337,6 +369,14 @@ export default function AdminUsers() {
                           <Key className="h-4 w-4 mr-1" />
                           Reset Password
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleOpenDeleteDialog(user)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
@@ -434,6 +474,47 @@ export default function AdminUsers() {
             </Button>
             <Button onClick={handleResetPassword} disabled={resetting}>
               {resetting ? 'Resetting...' : 'Reset Password'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete User Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete User</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this user? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg space-y-2">
+              <p className="font-semibold text-red-900">User Details:</p>
+              <p className="text-sm text-red-800">Email: {selectedUser?.email}</p>
+              <p className="text-sm text-red-800">Name: {selectedUser?.fullName}</p>
+              <p className="text-sm text-red-800">
+                Roles: {selectedUser?.roles.join(', ')}
+              </p>
+            </div>
+            <p className="text-sm text-muted-foreground mt-4">
+              This will permanently delete the user account and all associated data.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteUser}
+              disabled={deleting}
+            >
+              {deleting ? 'Deleting...' : 'Delete User'}
             </Button>
           </DialogFooter>
         </DialogContent>

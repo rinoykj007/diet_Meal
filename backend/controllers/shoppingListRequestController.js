@@ -134,17 +134,17 @@ exports.acceptRequest = async (req, res) => {
             });
         }
 
-        // Accept the request
+        // Accept the request and auto-start shopping
         request.deliveryPartnerId = req.user._id;
-        request.status = 'accepted';
+        request.status = 'in-progress';
         request.acceptedAt = new Date();
         await request.save();
 
         // Notify customer
         await Notification.create({
             userId: request.userId,
-            title: '✅ Delivery Partner Assigned',
-            message: `Your shopping list request has been accepted by ${req.user.fullName}`,
+            title: '🛒 Shopping Started',
+            message: `${req.user.fullName} accepted your request and started shopping for your items`,
             type: 'success',
             category: 'shopping-request',
             actionUrl: '/shopping-requests'
@@ -355,6 +355,148 @@ exports.cancelRequest = async (req, res) => {
             success: true,
             message: 'Request cancelled successfully',
             data: request
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error: error.message
+        });
+    }
+};
+
+// @desc    Confirm delivery received (Customer confirms they received the items)
+// @route   PUT /api/shopping-requests/:id/confirm-delivery
+// @access  Private (customer)
+exports.confirmDelivery = async (req, res) => {
+    try {
+        const request = await ShoppingListRequest.findById(req.params.id);
+
+        if (!request) {
+            return res.status(404).json({
+                success: false,
+                message: 'Request not found'
+            });
+        }
+
+        // Check if user owns this request
+        if (request.userId.toString() !== req.user._id.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: 'Not authorized to confirm this delivery'
+            });
+        }
+
+        // Can only confirm delivered requests
+        if (request.status !== 'delivered') {
+            return res.status(400).json({
+                success: false,
+                message: 'Can only confirm delivered requests'
+            });
+        }
+
+        // Keep status as delivered, just mark as confirmed
+        request.deliveryConfirmed = true;
+        request.deliveryConfirmedAt = new Date();
+        request.paymentStatus = 'paid';
+        await request.save();
+
+        // Notify delivery partner
+        if (request.deliveryPartnerId) {
+            await Notification.create({
+                userId: request.deliveryPartnerId,
+                title: '✅ Delivery Confirmed',
+                message: `Customer confirmed receipt of shopping list delivery. Payment completed.`,
+                type: 'success',
+                category: 'shopping-request',
+                actionUrl: '/delivery-partner/deliveries'
+            });
+        }
+
+        const populatedRequest = await ShoppingListRequest.findById(request._id)
+            .populate('userId', 'fullName email phone')
+            .populate('deliveryPartnerId', 'fullName email phone');
+
+        res.json({
+            success: true,
+            message: 'Delivery confirmed successfully',
+            data: populatedRequest
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error: error.message
+        });
+    }
+};
+
+// @desc    Report delivery issue/dispute (Customer didn't receive or has issues)
+// @route   PUT /api/shopping-requests/:id/dispute-delivery
+// @access  Private (customer)
+exports.disputeDelivery = async (req, res) => {
+    try {
+        const { reason } = req.body;
+
+        if (!reason || reason.trim().length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please provide a reason for the dispute'
+            });
+        }
+
+        const request = await ShoppingListRequest.findById(req.params.id);
+
+        if (!request) {
+            return res.status(404).json({
+                success: false,
+                message: 'Request not found'
+            });
+        }
+
+        // Check if user owns this request
+        if (request.userId.toString() !== req.user._id.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: 'Not authorized to dispute this delivery'
+            });
+        }
+
+        // Can only dispute delivered requests
+        if (request.status !== 'delivered') {
+            return res.status(400).json({
+                success: false,
+                message: 'Can only dispute delivered requests'
+            });
+        }
+
+        // Update status to disputed
+        request.status = 'disputed';
+        request.deliveryDisputed = true;
+        request.disputeReason = reason;
+        request.disputedAt = new Date();
+        await request.save();
+
+        // Notify delivery partner about dispute
+        if (request.deliveryPartnerId) {
+            await Notification.create({
+                userId: request.deliveryPartnerId,
+                title: '⚠️ Delivery Disputed',
+                message: `Customer reported an issue with delivery: ${reason}`,
+                type: 'warning',
+                category: 'shopping-request',
+                actionUrl: '/delivery-partner/deliveries'
+            });
+        }
+
+        const populatedRequest = await ShoppingListRequest.findById(request._id)
+            .populate('userId', 'fullName email phone')
+            .populate('deliveryPartnerId', 'fullName email phone');
+
+        res.json({
+            success: true,
+            message: 'Delivery dispute reported successfully',
+            data: populatedRequest
         });
     } catch (error) {
         res.status(500).json({

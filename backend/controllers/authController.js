@@ -1,4 +1,6 @@
 const User = require('../models/User');
+const Restaurant = require('../models/Restaurant');
+const Provider = require('../models/Provider');
 const bcrypt = require('bcryptjs');
 const generateToken = require('../utils/generateToken');
 
@@ -7,7 +9,7 @@ const generateToken = require('../utils/generateToken');
 // @access  Public
 exports.register = async (req, res) => {
   try {
-    const { email, password, fullName, phone } = req.body;
+    const { email, password, fullName, phone, roles } = req.body;
 
     // Check if user exists
     const userExists = await User.findOne({ email });
@@ -25,8 +27,51 @@ exports.register = async (req, res) => {
       password: hashedPassword,
       fullName,
       phone,
-      roles: ['user']
+      roles: roles && roles.length > 0 ? roles : ['user']
     });
+
+    // Auto-create Restaurant document if user has restaurant role
+    if (user.roles.includes('restaurant')) {
+      const existingRestaurant = await Restaurant.findOne({ ownerId: user._id });
+      if (!existingRestaurant) {
+        await Restaurant.create({
+          name: `${user.fullName}'s Restaurant`,
+          description: 'Please update your restaurant details',
+          dietTypes: [],
+          ownerId: user._id,
+          address: {
+            street: '',
+            city: '',
+            state: '',
+            zipCode: '',
+            country: ''
+          },
+          location: {
+            type: 'Point',
+            coordinates: [0, 0]
+          },
+          isApproved: false,
+          isActive: true
+        });
+        console.log(`Auto-created Restaurant document for user ${user.email}`);
+      }
+    }
+
+    // Auto-create Provider document if user has delivery-partner role
+    if (user.roles.includes('delivery-partner')) {
+      const existingProvider = await Provider.findOne({ userId: user._id });
+      if (!existingProvider) {
+        await Provider.create({
+          userId: user._id,
+          businessName: `${user.fullName}'s Delivery Service`,
+          description: 'Please update your delivery service details',
+          address: '',
+          phone: '',
+          isActive: true
+        });
+        console.log(`Auto-created Provider document for user ${user.email}`);
+      }
+    }
 
     res.status(201).json({
       _id: user._id,
@@ -199,6 +244,43 @@ exports.resetUserPassword = async (req, res) => {
     res.json({
       success: true,
       message: 'Password reset successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// @desc    Delete user (Admin only)
+// @route   DELETE /api/auth/users/:id
+// @access  Private/Admin
+exports.deleteUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Prevent admin from deleting themselves
+    if (user._id.toString() === req.user._id.toString()) {
+      return res.status(400).json({
+        success: false,
+        message: 'You cannot delete your own account'
+      });
+    }
+
+    // Delete user
+    await User.findByIdAndDelete(req.params.id);
+
+    res.json({
+      success: true,
+      message: 'User deleted successfully'
     });
   } catch (error) {
     res.status(500).json({

@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import {
   LayoutDashboard,
   Salad,
-  CalendarDays,
   History,
   User,
   Bell,
@@ -25,7 +24,7 @@ import { cn } from '@/lib/utils';
 
 interface DashboardLayoutProps {
   children: ReactNode;
-  role: 'user' | 'provider' | 'admin' | 'restaurant';
+  role: 'user' | 'admin' | 'restaurant' | 'delivery-partner';
 }
 
 const userNavItems = [
@@ -38,22 +37,19 @@ const userNavItems = [
   { label: 'Notifications', href: '/notifications', icon: Bell },
 ];
 
-const providerNavItems = [
-  { label: 'Dashboard', href: '/provider/dashboard', icon: LayoutDashboard },
-  { label: 'Diet Plans', href: '/provider/diet-plans', icon: Salad },
-  { label: 'Meals & Nutrition', href: '/provider/meals', icon: ChefHat },
-  { label: 'Availability', href: '/provider/availability', icon: CalendarDays },
-  { label: 'Orders', href: '/provider/orders', icon: ShoppingCart },
-  { label: 'Subscriptions', href: '/provider/subscriptions', icon: CreditCard },
-  { label: 'Profile', href: '/provider/profile', icon: User },
-];
-
 const restaurantNavItems = [
   { label: 'Dashboard', href: '/restaurant/dashboard', icon: LayoutDashboard },
   { label: 'Menu Management', href: '/restaurant/menu', icon: UtensilsCrossed },
   { label: 'Orders', href: '/restaurant/orders', icon: ShoppingCart },
   { label: 'Restaurant Info', href: '/restaurant/profile', icon: ChefHat },
   { label: 'Analytics', href: '/restaurant/analytics', icon: Settings },
+];
+
+const deliveryPartnerNavItems = [
+  { label: 'Dashboard', href: '/delivery-partner/dashboard', icon: LayoutDashboard },
+  { label: 'Available Requests', href: '/delivery-partner/requests', icon: ShoppingCart },
+  { label: 'My Deliveries', href: '/delivery-partner/deliveries', icon: History },
+  { label: 'Profile', href: '/profile', icon: User },
 ];
 
 const adminNavItems = [
@@ -73,8 +69,8 @@ export const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
 
-  const navItems = role === 'admin' ? adminNavItems : role === 'provider' ? providerNavItems : role === 'restaurant' ? restaurantNavItems : userNavItems;
-  const title = role === 'admin' ? 'Admin Panel' : role === 'provider' ? 'Provider Panel' : role === 'restaurant' ? 'Restaurant Dashboard' : 'My Account';
+  const navItems = role === 'admin' ? adminNavItems : role === 'restaurant' ? restaurantNavItems : role === 'delivery-partner' ? deliveryPartnerNavItems : userNavItems;
+  const title = role === 'admin' ? 'Admin Panel' : role === 'restaurant' ? 'Restaurant Dashboard' : role === 'delivery-partner' ? 'Delivery Partner Dashboard' : 'My Account';
 
   const handleSignOut = async () => {
     await signOut();

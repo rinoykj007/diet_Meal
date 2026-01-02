@@ -30,6 +30,10 @@ const aiDietPreferenceSchema = new mongoose.Schema({
     min: 20,
     max: 500
   },
+  activityLevel: {
+    type: String,
+    enum: ['sedentary', 'light', 'moderate', 'active', 'very_active']
+  },
   calorieTarget: {
     type: Number,
     min: 0

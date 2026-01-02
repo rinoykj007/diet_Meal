@@ -37,7 +37,7 @@ const shoppingListRequestSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'accepted', 'in-progress', 'delivered', 'cancelled'],
+        enum: ['pending', 'accepted', 'in-progress', 'delivered', 'confirmed', 'disputed', 'cancelled'],
         default: 'pending'
     },
     deliveryPartnerId: {
@@ -45,6 +45,17 @@ const shoppingListRequestSchema = new mongoose.Schema({
         ref: 'User',
         default: null
     },
+    deliveryConfirmed: {
+        type: Boolean,
+        default: false
+    },
+    deliveryConfirmedAt: Date,
+    deliveryDisputed: {
+        type: Boolean,
+        default: false
+    },
+    disputeReason: String,
+    disputedAt: Date,
     deliveryFee: {
         type: Number,
         default: 10.00  // Fixed delivery fee

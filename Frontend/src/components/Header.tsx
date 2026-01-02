@@ -1,7 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ChevronDown, User, Store, Truck } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Header = () => {
   const location = useLocation();
@@ -13,7 +19,18 @@ const Header = () => {
     { label: "Diet Restaurants", path: "/diet-restaurants" },
     { label: "Contact", path: "/contact" },
     { label: "Choose Plan", path: "/plans" },
-    { label: "Login", path: "/login" },
+  ];
+
+  const loginOptions = [
+    { label: "User Login", path: "/login", icon: User },
+    { label: "Restaurant Login", path: "/login?role=restaurant", icon: Store },
+    { label: "Delivery Partner Login", path: "/login?role=delivery-partner", icon: Truck },
+  ];
+
+  const signUpOptions = [
+    { label: "User Sign Up", path: "/register", icon: User },
+    { label: "Restaurant Sign Up", path: "/provider/register", icon: Store },
+    { label: "Delivery Partner Sign Up", path: "/delivery-partner/register", icon: Truck },
   ];
 
   const toggleMobileMenu = () => {
@@ -47,6 +64,46 @@ const Header = () => {
               </Button>
             </Link>
           ))}
+
+          {/* Login Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="nav" size="sm" className="gap-1">
+                Login
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {loginOptions.map((option) => (
+                <DropdownMenuItem key={option.path} asChild>
+                  <Link to={option.path} className="flex items-center gap-2 cursor-pointer">
+                    <option.icon className="h-4 w-4" />
+                    {option.label}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Sign Up Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="nav" size="sm" className="gap-1">
+                Sign Up
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {signUpOptions.map((option) => (
+                <DropdownMenuItem key={option.path} asChild>
+                  <Link to={option.path} className="flex items-center gap-2 cursor-pointer">
+                    <option.icon className="h-4 w-4" />
+                    {option.label}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </nav>
 
         {/* Desktop CTA Button */}
@@ -98,6 +155,44 @@ const Header = () => {
                 </Button>
               </Link>
             ))}
+
+            {/* Login Options in Mobile */}
+            <div className="pt-4 border-t border-border">
+              <p className="text-xs font-semibold text-muted-foreground mb-2 px-3">
+                Login As
+              </p>
+              {loginOptions.map((option) => (
+                <Link key={option.path} to={option.path} onClick={closeMobileMenu}>
+                  <Button
+                    variant="nav"
+                    size="sm"
+                    className="w-full justify-start text-left gap-2"
+                  >
+                    <option.icon className="h-4 w-4" />
+                    {option.label}
+                  </Button>
+                </Link>
+              ))}
+            </div>
+
+            {/* Sign Up Options in Mobile */}
+            <div className="pt-4 border-t border-border">
+              <p className="text-xs font-semibold text-muted-foreground mb-2 px-3">
+                Sign Up As
+              </p>
+              {signUpOptions.map((option) => (
+                <Link key={option.path} to={option.path} onClick={closeMobileMenu}>
+                  <Button
+                    variant="nav"
+                    size="sm"
+                    className="w-full justify-start text-left gap-2"
+                  >
+                    <option.icon className="h-4 w-4" />
+                    {option.label}
+                  </Button>
+                </Link>
+              ))}
+            </div>
           </div>
 
           {/* Mobile CTA Button */}

@@ -275,73 +275,83 @@ export default function WeeklyDietPlan() {
                 </div>
               </div>
 
-              {/* Meals for selected day */}
-              <div className="space-y-4">
+              {/* Meals for selected day - Modern Compact Layout */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {recommendation.weeklyPlan[selectedDay]?.meals.map((meal, index) => (
-                  <Card key={index} className="border-2">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                          <ChefHat className="w-5 h-5 text-primary" />
-                          {meal.name}
-                        </CardTitle>
-                        <Badge variant="secondary">{meal.mealType}</Badge>
+                  <Card key={index} className="flex flex-col h-full overflow-hidden hover:shadow-lg transition-shadow">
+                    {/* Meal Header - Compact */}
+                    <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-2 border-b">
+                      <div className="flex items-center gap-2">
+                        <ChefHat className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-semibold text-primary">{meal.mealType}</span>
                       </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <p className="text-sm text-muted-foreground">{meal.description}</p>
+                      <h3 className="font-bold text-base mt-0.5">{meal.name}</h3>
+                    </div>
 
-                      {/* Nutrition info */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-muted rounded-lg">
-                        <div>
-                          <p className="text-xs text-muted-foreground">Calories</p>
-                          <p className="text-lg font-bold">{meal.calories}</p>
+                    {/* Card Content - Grows to fill space */}
+                    <div className="p-4 space-y-2.5 flex-grow flex flex-col">
+                      {/* Description */}
+                      <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                        {meal.description}
+                      </p>
+
+                      {/* Nutrition info - Compact 2x2 Grid */}
+                      <div className="grid grid-cols-2 gap-1.5 text-xs bg-gradient-to-br from-muted/50 to-muted/30 p-2.5 rounded-lg">
+                        <div className="flex flex-col">
+                          <span className="text-muted-foreground text-[10px] uppercase tracking-wide">Calories</span>
+                          <span className="text-xl font-bold text-primary leading-tight">{meal.calories}</span>
                         </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">Protein</p>
-                          <p className="text-lg font-bold">{meal.macros.protein}g</p>
+                        <div className="flex flex-col">
+                          <span className="text-muted-foreground text-[10px] uppercase tracking-wide">Protein</span>
+                          <span className="text-xl font-bold text-primary leading-tight">{meal.macros.protein}g</span>
                         </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">Carbs</p>
-                          <p className="text-lg font-bold">{meal.macros.carbs}g</p>
+                        <div className="flex flex-col">
+                          <span className="text-muted-foreground text-[10px] uppercase tracking-wide">Carbs</span>
+                          <span className="text-xl font-bold text-primary leading-tight">{meal.macros.carbs}g</span>
                         </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">Fats</p>
-                          <p className="text-lg font-bold">{meal.macros.fats}g</p>
+                        <div className="flex flex-col">
+                          <span className="text-muted-foreground text-[10px] uppercase tracking-wide">Fats</span>
+                          <span className="text-xl font-bold text-primary leading-tight">{meal.macros.fats}g</span>
                         </div>
                       </div>
 
-                      {/* Ingredients */}
+                      {/* Ingredients - Compact */}
                       <div>
-                        <p className="font-semibold text-sm mb-2">Ingredients:</p>
-                        <ul className="grid grid-cols-1 md:grid-cols-2 gap-1">
-                          {meal.ingredients.map((ingredient, idx) => (
-                            <li key={idx} className="flex items-start gap-2 text-sm">
-                              <div className="w-1.5 h-1.5 bg-primary rounded-full mt-1.5" />
-                              <span className="text-muted-foreground">{ingredient}</span>
-                            </li>
+                        <p className="font-semibold text-xs mb-1 text-foreground/80">Ingredients</p>
+                        <div className="flex flex-wrap gap-1">
+                          {meal.ingredients.slice(0, 5).map((ingredient, idx) => (
+                            <span key={idx} className="text-[10px] bg-secondary/50 px-1.5 py-0.5 rounded">
+                              {ingredient}
+                            </span>
                           ))}
-                        </ul>
+                          {meal.ingredients.length > 5 && (
+                            <span className="text-[10px] bg-secondary/50 px-1.5 py-0.5 rounded font-semibold">
+                              +{meal.ingredients.length - 5} more
+                            </span>
+                          )}
+                        </div>
                       </div>
 
-                      {/* Instructions */}
-                      <div>
-                        <p className="font-semibold text-sm mb-2">Instructions:</p>
-                        <p className="text-sm text-muted-foreground leading-relaxed">
+                      {/* Instructions - Compact */}
+                      <div className="flex-grow">
+                        <p className="font-semibold text-xs mb-1 text-foreground/80">Instructions</p>
+                        <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2">
                           {meal.instructions}
                         </p>
                       </div>
+                    </div>
 
-                      {/* Order from Restaurant Button */}
+                    {/* Order Button - Separate section at bottom */}
+                    <div className="p-4 pt-0">
                       <Button
                         onClick={() => handleOrderFromRestaurant(meal)}
-                        className="w-full mt-4"
-                        variant="default"
+                        className="w-full h-9 text-sm"
+                        size="sm"
                       >
-                        <Store className="w-4 h-4 mr-2" />
+                        <Store className="w-3.5 h-3.5 mr-1.5" />
                         Order from Restaurant
                       </Button>
-                    </CardContent>
+                    </div>
                   </Card>
                 ))}
               </div>
@@ -373,11 +383,11 @@ export default function WeeklyDietPlan() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+            <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
               {recommendation.shoppingList.map((item, index) => (
                 <li key={index} className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-primary rounded-full" />
-                  <span className="text-muted-foreground">{item}</span>
+                  <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
+                  <span className="text-sm text-muted-foreground">{item}</span>
                 </li>
               ))}
             </ul>

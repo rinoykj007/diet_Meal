@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import CountUp from 'react-countup';
 
 interface Restaurant {
   _id: string;
@@ -183,17 +184,14 @@ const DietRestaurants = () => {
       // Fetch updated preferences
       await fetchUserPreferences();
 
-      // Close modal and enable personalized mode
-      setShowTDEEModal(false);
-      setShowPersonalized(true);
+      // Switch to confirm mode to show calculation results
+      setTdeeModalMode('confirm');
 
       toast({
-        title: 'TDEE Saved!',
-        description: 'Your personalized diet plan is ready',
+        title: 'TDEE Calculated!',
+        description: 'Review your results below',
       });
 
-      // Refresh restaurants
-      fetchRestaurants();
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -223,57 +221,85 @@ const DietRestaurants = () => {
       {/* TDEE Confirmation/Setup Modal - Blocks access until TDEE is confirmed/set */}
       {showTDEEModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-2xl">
-            <CardHeader>
+          <Card className="w-full max-w-xl">
+            <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
-                <Calculator className="h-6 w-6 text-blue-600" />
-                <CardTitle>
+                <Calculator className="h-5 w-5 text-blue-600" />
+                <CardTitle className="text-lg">
                   {tdeeModalMode === 'confirm' && 'Confirm Your TDEE'}
                   {tdeeModalMode === 'setup' && 'Set Up Your TDEE'}
                   {tdeeModalMode === 'edit' && 'Update Your TDEE'}
                 </CardTitle>
               </div>
-              <CardDescription>
-                {tdeeModalMode === 'confirm' && 'We found your previously calculated TDEE. Would you like to use it or update?'}
-                {tdeeModalMode === 'setup' && 'Enter your details to calculate your Total Daily Energy Expenditure for personalized recommendations'}
-                {tdeeModalMode === 'edit' && 'Update your details to recalculate your TDEE'}
-              </CardDescription>
+              {tdeeModalMode === 'confirm' && (
+                <CardDescription className="text-xs">We found your previously calculated TDEE. Would you like to use it or update?</CardDescription>
+              )}
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0">
               {/* CONFIRM MODE - Show existing TDEE with OK/Edit buttons */}
               {tdeeModalMode === 'confirm' && userPreferences && (
-                <div className="space-y-6">
-                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg">
-                    <div className="text-center">
-                      <p className="text-sm text-gray-600 mb-2">Your Daily Calorie Target</p>
-                      <p className="text-5xl font-bold text-blue-600">{userPreferences.tdee}</p>
-                      <p className="text-sm text-gray-500 mt-1">calories/day</p>
-                    </div>
-                    <div className="grid grid-cols-4 gap-3 mt-6">
-                      <div className="text-center">
-                        <p className="text-xs text-gray-600">Breakfast</p>
-                        <p className="text-lg font-semibold text-blue-600">{userPreferences.mealBudgets?.breakfast.target}</p>
+                <div className="space-y-3">
+                  {/* Top Row: BMR and TDEE (2 columns) */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* BMR */}
+                    {userPreferences.bmr && (
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">Basal Metabolic Rate (BMR)</p>
+                        <p className="text-xs text-gray-600">Calories burned at rest</p>
+                        <p className="text-2xl font-bold text-gray-700 mt-1">
+                          <CountUp end={userPreferences.bmr} duration={1.5} separator="," /> cal
+                        </p>
                       </div>
-                      <div className="text-center">
-                        <p className="text-xs text-gray-600">Lunch</p>
-                        <p className="text-lg font-semibold text-green-600">{userPreferences.mealBudgets?.lunch.target}</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xs text-gray-600">Dinner</p>
-                        <p className="text-lg font-semibold text-orange-600">{userPreferences.mealBudgets?.dinner.target}</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xs text-gray-600">Snacks</p>
-                        <p className="text-lg font-semibold text-purple-600">{userPreferences.mealBudgets?.snacks.target}</p>
-                      </div>
+                    )}
+
+                    {/* TDEE */}
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-3 rounded-lg">
+                      <p className="text-xs text-gray-500 mb-1">Total Daily Energy Expenditure (TDEE)</p>
+                      <p className="text-2xl font-bold text-blue-600 mt-1">
+                        <CountUp end={userPreferences.tdee} duration={1.5} separator="," />
+                      </p>
+                      <p className="text-xs text-gray-600">calories/day</p>
                     </div>
                   </div>
-                  <div className="flex gap-3">
-                    <Button className="flex-1" size="lg" onClick={handleConfirmTDEE}>
-                      OK - Use This TDEE
+
+                  {/* Bottom Row: Meal Budgets (2x2 grid) */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="text-center p-2 bg-blue-50 rounded">
+                      <p className="text-xs text-gray-600">Breakfast</p>
+                      <p className="text-base font-bold text-blue-600">
+                        <CountUp end={userPreferences.mealBudgets?.breakfast.target || 0} duration={1.5} separator="," />
+                      </p>
+                      <p className="text-xs text-gray-500">cal (25%)</p>
+                    </div>
+                    <div className="text-center p-2 bg-green-50 rounded">
+                      <p className="text-xs text-gray-600">Lunch</p>
+                      <p className="text-base font-bold text-green-600">
+                        <CountUp end={userPreferences.mealBudgets?.lunch.target || 0} duration={1.5} separator="," />
+                      </p>
+                      <p className="text-xs text-gray-500">cal (35%)</p>
+                    </div>
+                    <div className="text-center p-2 bg-orange-50 rounded">
+                      <p className="text-xs text-gray-600">Dinner</p>
+                      <p className="text-base font-bold text-orange-600">
+                        <CountUp end={userPreferences.mealBudgets?.dinner.target || 0} duration={1.5} separator="," />
+                      </p>
+                      <p className="text-xs text-gray-500">cal (30%)</p>
+                    </div>
+                    <div className="text-center p-2 bg-purple-50 rounded">
+                      <p className="text-xs text-gray-600">Snacks</p>
+                      <p className="text-base font-bold text-purple-600">
+                        <CountUp end={userPreferences.mealBudgets?.snacks.target || 0} duration={1.5} separator="," />
+                      </p>
+                      <p className="text-xs text-gray-500">cal (10%)</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button className="flex-1" size="sm" onClick={handleConfirmTDEE}>
+                      Continue to Food Recommendations
                     </Button>
-                    <Button variant="outline" size="lg" onClick={handleEditTDEE}>
-                      Edit - Update TDEE
+                    <Button variant="outline" size="sm" onClick={handleEditTDEE}>
+                      Edit TDEE
                     </Button>
                   </div>
                 </div>

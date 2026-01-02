@@ -1,7 +1,8 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { authAPI } from '@/lib/api';
 
-type AppRole = 'user' | 'provider' | 'admin';
+type AppRole = 'user' | 'admin' | 'restaurant' | 'delivery-partner';
+
 
 interface User {
   _id: string;

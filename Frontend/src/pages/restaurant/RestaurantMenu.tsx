@@ -8,9 +8,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { restaurantAPI, dietFoodAPI } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2, UtensilsCrossed, DollarSign, AlertCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, UtensilsCrossed, DollarSign, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
 
 interface DietFood {
     _id: string;
@@ -32,6 +34,7 @@ interface Restaurant {
     _id: string;
     name: string;
     dietTypes: string[];
+    isApproved: boolean;
 }
 
 export default function RestaurantMenu() {
@@ -128,9 +131,16 @@ export default function RestaurantMenu() {
             resetForm();
             fetchData();
         } catch (error: any) {
+            console.error('Error saving menu item:', error);
+
+            // Extract validation errors if available
+            const errorMessage = error.response?.data?.errors
+                ? error.response.data.errors.join('. ')
+                : error.response?.data?.message || 'Failed to save menu item';
+
             toast({
                 title: 'Error',
-                description: error.response?.data?.message || 'Failed to save menu item',
+                description: errorMessage,
                 variant: 'destructive',
             });
         }
@@ -190,6 +200,35 @@ export default function RestaurantMenu() {
         });
     };
 
+    // Calculate calories from macros
+    const calculateMacroCalories = () => {
+        const protein = parseFloat(String(formData.protein)) || 0;
+        const carbs = parseFloat(String(formData.carbs)) || 0;
+        const fat = parseFloat(String(formData.fat)) || 0;
+        return (protein * 4) + (carbs * 4) + (fat * 9);
+    };
+
+    // Get macro consistency warning message
+    const getMacroWarning = () => {
+        const stated = parseFloat(String(formData.calories)) || 0;
+        const calculated = calculateMacroCalories();
+        const tolerance = 0.10;
+
+        if (stated === 0 || calculated === 0) return null;
+
+        const diff = Math.abs(stated - calculated);
+        const percentDiff = (diff / calculated) * 100;
+
+        if (percentDiff > tolerance * 100) {
+            return {
+                type: 'warning',
+                message: `Warning: Stated calories (${stated}) don't match calculated calories (${Math.round(calculated)}) from macros. Difference: ${Math.round(percentDiff)}%`
+            };
+        }
+
+        return null;
+    };
+
     if (loading) {
         return (
             <DashboardLayout role="restaurant">
@@ -214,6 +253,9 @@ export default function RestaurantMenu() {
         );
     }
 
+    // Only allow adding menu items if restaurant is approved
+    const canAddMenuItem = restaurant?.isApproved === true;
+
     return (
         <DashboardLayout role="restaurant">
             <div className="space-y-6">
@@ -229,12 +271,25 @@ export default function RestaurantMenu() {
                         </p>
                     </div>
                     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button onClick={resetForm}>
-                                <Plus className="h-4 w-4 mr-2" />
-                                Add Menu Item
-                            </Button>
-                        </DialogTrigger>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div>
+                                        <DialogTrigger asChild>
+                                            <Button onClick={resetForm} disabled={!canAddMenuItem}>
+                                                <Plus className="h-4 w-4 mr-2" />
+                                                Add Menu Item
+                                            </Button>
+                                        </DialogTrigger>
+                                    </div>
+                                </TooltipTrigger>
+                                {!canAddMenuItem && (
+                                    <TooltipContent>
+                                        <p>Wait for admin approval to add menu items</p>
+                                    </TooltipContent>
+                                )}
+                            </Tooltip>
+                        </TooltipProvider>
                         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                             <DialogHeader>
                                 <DialogTitle>{editingItem ? 'Edit' : 'Add'} Menu Item</DialogTitle>
@@ -305,10 +360,15 @@ export default function RestaurantMenu() {
                                             id="calories"
                                             name="calories"
                                             type="number"
+                                            min="50"
+                                            max="2000"
+                                            step="1"
                                             value={formData.calories}
                                             onChange={handleInputChange}
+                                            placeholder="e.g., 450"
                                             required
                                         />
+                                        <p className="text-xs text-muted-foreground mt-1">Range: 50-2000 calories</p>
                                     </div>
 
                                     <div>
@@ -317,10 +377,15 @@ export default function RestaurantMenu() {
                                             id="protein"
                                             name="protein"
                                             type="number"
+                                            min="0"
+                                            max="150"
+                                            step="0.1"
                                             value={formData.protein}
                                             onChange={handleInputChange}
+                                            placeholder="e.g., 25"
                                             required
                                         />
+                                        <p className="text-xs text-muted-foreground mt-1">Range: 0-150g</p>
                                     </div>
 
                                     <div>
@@ -329,10 +394,15 @@ export default function RestaurantMenu() {
                                             id="carbs"
                                             name="carbs"
                                             type="number"
+                                            min="0"
+                                            max="300"
+                                            step="0.1"
                                             value={formData.carbs}
                                             onChange={handleInputChange}
+                                            placeholder="e.g., 50"
                                             required
                                         />
+                                        <p className="text-xs text-muted-foreground mt-1">Range: 0-300g</p>
                                     </div>
 
                                     <div>
@@ -341,11 +411,29 @@ export default function RestaurantMenu() {
                                             id="fat"
                                             name="fat"
                                             type="number"
+                                            min="0"
+                                            max="100"
+                                            step="0.1"
                                             value={formData.fat}
                                             onChange={handleInputChange}
+                                            placeholder="e.g., 15"
                                             required
                                         />
+                                        <p className="text-xs text-muted-foreground mt-1">Range: 0-100g</p>
                                     </div>
+
+                                    {/* Macro Consistency Warning */}
+                                    {getMacroWarning() && (
+                                        <div className="col-span-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                            <p className="text-sm text-yellow-800 flex items-center gap-2">
+                                                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                                                {getMacroWarning()!.message}
+                                            </p>
+                                            <p className="text-xs text-yellow-700 mt-1">
+                                                Formula: (Protein × 4) + (Carbs × 4) + (Fat × 9) ≈ Calories
+                                            </p>
+                                        </div>
+                                    )}
 
                                     <div>
                                         <Label htmlFor="servingSize">Serving Size</Label>
@@ -432,6 +520,34 @@ export default function RestaurantMenu() {
                         </CardContent>
                     </Card>
                 </div>
+
+                {/* Approval Status Alert */}
+                {restaurant && !restaurant.isApproved && (
+                    <Alert className="border-yellow-200 bg-yellow-50">
+                        <Clock className="h-4 w-4 text-yellow-600" />
+                        <AlertDescription className="text-yellow-900">
+                            <div className="flex flex-col gap-1">
+                                <p className="font-semibold">⏳ Pending Admin Approval</p>
+                                <p className="text-sm">
+                                    Your restaurant is awaiting admin approval. You cannot add menu items until your restaurant is approved.
+                                </p>
+                                <p className="text-sm font-semibold mt-1">
+                                    The "Add Menu Item" button will be enabled after admin approval.
+                                </p>
+                            </div>
+                        </AlertDescription>
+                    </Alert>
+                )}
+
+                {restaurant && restaurant.isApproved && (
+                    <Alert className="border-green-200 bg-green-50">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        <AlertDescription className="text-green-900">
+                            <p className="font-semibold">✓ Restaurant Approved</p>
+                            <p className="text-sm">Your restaurant is approved! You can now add menu items.</p>
+                        </AlertDescription>
+                    </Alert>
+                )}
 
                 {/* Menu Items */}
                 <Card>

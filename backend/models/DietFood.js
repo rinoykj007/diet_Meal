@@ -24,22 +24,26 @@ const dietFoodSchema = new mongoose.Schema({
   calories: {
     type: Number,
     required: [true, 'Calories are required'],
-    min: 0
+    min: [50, 'Calories must be at least 50'],
+    max: [2000, 'Calories cannot exceed 2000']
   },
   protein: {
     type: Number,
     required: [true, 'Protein content is required'],
-    min: 0
+    min: [0, 'Protein cannot be negative'],
+    max: [150, 'Protein cannot exceed 150g']
   },
   carbs: {
     type: Number,
     required: [true, 'Carbohydrates content is required'],
-    min: 0
+    min: [0, 'Carbs cannot be negative'],
+    max: [300, 'Carbs cannot exceed 300g']
   },
   fat: {
     type: Number,
     required: [true, 'Fat content is required'],
-    min: 0
+    min: [0, 'Fat cannot be negative'],
+    max: [100, 'Fat cannot exceed 100g']
   },
   fiber: {
     type: Number,
@@ -88,6 +92,31 @@ const dietFoodSchema = new mongoose.Schema({
   }
 }, {
   timestamps: true
+});
+
+// Validate macro consistency before saving
+dietFoodSchema.pre('save', function(next) {
+  // Calculate calories from macros using standard conversion:
+  // Protein: 4 cal/g, Carbs: 4 cal/g, Fat: 9 cal/g
+  const calculatedCalories = (this.protein * 4) + (this.carbs * 4) + (this.fat * 9);
+
+  // Allow 10% tolerance for rounding and measurement variations
+  const tolerance = 0.10;
+  const minCalories = calculatedCalories * (1 - tolerance);
+  const maxCalories = calculatedCalories * (1 + tolerance);
+
+  // Check if stated calories fall within acceptable range
+  if (this.calories < minCalories || this.calories > maxCalories) {
+    const error = new Error(
+      `Macro inconsistency: Based on protein (${this.protein}g), carbs (${this.carbs}g), ` +
+      `and fat (${this.fat}g), calculated calories are ${Math.round(calculatedCalories)}. ` +
+      `Stated calories (${this.calories}) must be within ±10% (${Math.round(minCalories)}-${Math.round(maxCalories)}).`
+    );
+    error.name = 'ValidationError';
+    return next(error);
+  }
+
+  next();
 });
 
 // Indexes for faster queries

@@ -7,7 +7,9 @@ const {
     updateStatus,
     getMyRequests,
     getMyDeliveries,
-    cancelRequest
+    cancelRequest,
+    confirmDelivery,
+    disputeDelivery
 } = require('../controllers/shoppingListRequestController');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -15,6 +17,8 @@ const { protect, authorize } = require('../middleware/auth');
 router.post('/', protect, createRequest);
 router.get('/my-requests', protect, getMyRequests);
 router.put('/:id/cancel', protect, cancelRequest);
+router.put('/:id/confirm-delivery', protect, confirmDelivery);
+router.put('/:id/dispute-delivery', protect, disputeDelivery);
 
 // Delivery partner routes
 router.get('/available', protect, authorize('delivery-partner'), getAvailableRequests);

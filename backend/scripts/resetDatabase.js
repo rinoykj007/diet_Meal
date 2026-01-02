@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const User = require('./models/User');
-const Restaurant = require('./models/Restaurant');
-const DietFood = require('./models/DietFood');
+const User = require('../models/User');
+const Restaurant = require('../models/Restaurant');
+const DietFood = require('../models/DietFood');
 
 dotenv.config();
 

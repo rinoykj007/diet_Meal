@@ -36,7 +36,7 @@ export default api;
 
 // Auth API
 export const authAPI = {
-  register: (data: { email: string; password: string; fullName: string; phone?: string }) =>
+  register: (data: { email: string; password: string; fullName: string; phone?: string; roles?: string[] }) =>
     api.post('/auth/register', data),
 
   login: (email: string, password: string) =>
@@ -53,6 +53,9 @@ export const authAPI = {
 
   resetUserPassword: (userId: string, newPassword: string) =>
     api.put(`/auth/users/${userId}/password`, { newPassword }),
+
+  deleteUser: (userId: string) =>
+    api.delete(`/auth/users/${userId}`),
 };
 
 // Provider API
@@ -446,6 +449,12 @@ export const shoppingListAPI = {
 
   cancelRequest: (id: string) =>
     api.put(`/shopping-requests/${id}/cancel`),
+
+  confirmDelivery: (id: string) =>
+    api.put(`/shopping-requests/${id}/confirm-delivery`),
+
+  disputeDelivery: (id: string, reason: string) =>
+    api.put(`/shopping-requests/${id}/dispute-delivery`, { reason }),
 
   // Delivery partner methods
   getAvailableRequests: () =>

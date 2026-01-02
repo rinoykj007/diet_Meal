@@ -1,10 +1,7 @@
-/**
- * Macro Scoring Utility
- * Calculates how well a food item matches user's health goals and nutritional targets
- */
+
 
 /**
- * Calculate BMR using Harris-Benedict Equation
+//  Calculate BMR using Mifflin-St Jeor Equation 
  * @param {Object} params - User parameters
  * @param {number} params.age - Age in years
  * @param {number} params.weight - Weight in kg
@@ -16,13 +13,12 @@ const calculateBMR = ({ age, weight, height, gender }) => {
   if (!age || !weight || !height || !gender) {
     return null;
   }
-
   let bmr = 0;
-
+ 
   if (gender === 'male') {
-    bmr = 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age);
+    bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
   } else if (gender === 'female') {
-    bmr = 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age);
+    bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
   }
 
   return Math.round(bmr);

@@ -12,14 +12,12 @@ const {
 const openrouter = new OpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY,
   defaultHeaders: {
-    'HTTP-Referer': 'http://localhost:5173', // Your site URL
-    'X-Title': 'Exact Meal Design', // Your site title
+    'HTTP-Referer': 'http://localhost:5173', 
+        'X-Title': 'Exact Meal Design', 
   },
 });
 
-// @desc    Generate AI diet recommendation with streaming
-// @route   POST /api/ai-diet/generate
-// @access  Private
+
 exports.generateDietRecommendation = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -93,7 +91,7 @@ IMPORTANT: Return ONLY a valid JSON object (no markdown, no code blocks, no addi
     let stream;
     try {
       stream = await openrouter.chat.send({
-        model: 'mistralai/devstral-2512:free',  // Fast, free, and reliable Mistral model
+        model: 'mistralai/devstral-2512:free',  
         messages: [
           {
             role: 'user',
@@ -400,16 +398,16 @@ exports.getUserPreferences = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    // Try to get the most recent AI diet recommendation first
+    // Check for saved preferences first (most up-to-date)
+    const savedPreference = await AIDietPreference.findOne({ userId });
+
+    // Also get the most recent AI diet recommendation as fallback
     const latestRecommendation = await AIDietRecommendation.findOne({ userId })
       .sort({ createdAt: -1 })
       .limit(1);
 
-    // Also check for saved preferences
-    const savedPreference = await AIDietPreference.findOne({ userId });
-
-    // Use latest recommendation preferences, fallback to saved preferences
-    const preferences = latestRecommendation?.preferences || savedPreference;
+    // Use saved preferences first, fallback to latest recommendation preferences
+    const preferences = savedPreference || latestRecommendation?.preferences;
 
     if (!preferences) {
       return res.json({

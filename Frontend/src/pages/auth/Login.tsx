@@ -1,32 +1,62 @@
-import { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { restaurantAPI } from '@/lib/api';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { Salad, Eye, EyeOff } from 'lucide-react';
-import { z } from 'zod';
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { restaurantAPI } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
+import { Salad, Eye, EyeOff, ChevronDown, User, Store, Truck } from "lucide-react";
+import { z } from "zod";
 
 const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
+    {}
+  );
 
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
-  const role = searchParams.get('role') || 'user';
+  const role = searchParams.get("role") || "user";
+
+  // Show error from Google OAuth if present
+  useEffect(() => {
+    const error = searchParams.get("error");
+    if (error) {
+      toast({
+        title: "Authentication Failed",
+        description: error,
+        variant: "destructive",
+      });
+      // Clean up URL
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete("error");
+      navigate(`?${newParams.toString()}`, { replace: true });
+    }
+  }, [searchParams, toast, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +66,8 @@ export default function Login() {
     if (!result.success) {
       const fieldErrors: { email?: string; password?: string } = {};
       result.error.errors.forEach((err) => {
-        if (err.path[0]) fieldErrors[err.path[0] as 'email' | 'password'] = err.message;
+        if (err.path[0])
+          fieldErrors[err.path[0] as "email" | "password"] = err.message;
       });
       setErrors(fieldErrors);
       return;
@@ -48,54 +79,68 @@ export default function Login() {
     if (error) {
       setLoading(false);
       toast({
-        title: 'Login failed',
-        description: error.message === 'Invalid login credentials'
-          ? 'Invalid email or password. Please try again.'
-          : error.message,
-        variant: 'destructive',
+        title: "Login failed",
+        description:
+          error.message === "Invalid login credentials"
+            ? "Invalid email or password. Please try again."
+            : error.message,
+        variant: "destructive",
       });
       return;
     }
 
     // Get the updated user from localStorage (set by signIn)
-    const userDataStr = localStorage.getItem('user');
+    const userDataStr = localStorage.getItem("user");
     const userData = userDataStr ? JSON.parse(userDataStr) : null;
 
     // Priority 1: Check if user is admin
-    if (userData?.roles?.includes('admin')) {
+    if (userData?.roles?.includes("admin")) {
       setLoading(false);
-      toast({ title: 'Welcome back, Admin!', description: 'Redirecting to admin dashboard...' });
-      navigate('/admin/dashboard');
+      toast({
+        title: "Welcome back, Admin!",
+        description: "Redirecting to admin dashboard...",
+      });
+      navigate("/admin/dashboard");
       return;
     }
 
     // Priority 2: Check if user has delivery-partner role
-    if (userData?.roles?.includes('delivery-partner')) {
+    if (userData?.roles?.includes("delivery-partner")) {
       setLoading(false);
-      toast({ title: 'Welcome back!', description: 'Redirecting to delivery partner dashboard...' });
-      navigate('/delivery-partner/dashboard');
+      toast({
+        title: "Welcome back!",
+        description: "Redirecting to delivery partner dashboard...",
+      });
+      navigate("/delivery-partner/dashboard");
       return;
     }
 
     // Priority 3: Check if user has provider role
-    if (userData?.roles?.includes('provider')) {
+    if (userData?.roles?.includes("restaurant")) {
       setLoading(false);
-      toast({ title: 'Welcome back!', description: 'Redirecting to restaurant dashboard...' });
-      navigate('/restaurant/dashboard');
+      toast({
+        title: "Welcome back!",
+        description: "Redirecting to restaurant dashboard...",
+      });
+      navigate("/restaurant/dashboard");
       return;
     }
 
     // Priority 4: Default to user dashboard
     setLoading(false);
-    toast({ title: 'Welcome back!', description: 'You have successfully logged in.' });
-    navigate('/dashboard');
+    toast({
+      title: "Welcome back!",
+      description: "You have successfully logged in.",
+    });
+    navigate("/dashboard");
   };
 
   const getTitle = () => {
-    if (role === 'admin') return 'Admin Login';
-    if (role === 'provider') return 'Provider Login';
-    if (role === 'delivery-partner' || role === 'delivery') return 'Delivery Partner Login';
-    return 'Welcome Back';
+    if (role === "admin") return "Admin Login";
+    if (role === "restaurant") return "Restaurant Login";
+    if (role === "delivery-partner" || role === "delivery")
+      return "Delivery Partner Login";
+    return "Welcome Back";
   };
 
   return (
@@ -109,7 +154,9 @@ export default function Login() {
             <span className="font-heading font-bold text-2xl">NutriPlan</span>
           </Link>
           <CardTitle className="text-2xl">{getTitle()}</CardTitle>
-          <CardDescription>Enter your credentials to access your account</CardDescription>
+          <CardDescription>
+            Enter your credentials to access your account
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -123,7 +170,9 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
               />
-              {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+              {errors.email && (
+                <p className="text-sm text-destructive">{errors.email}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -131,7 +180,7 @@ export default function Login() {
               <div className="relative">
                 <Input
                   id="password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -144,20 +193,29 @@ export default function Login() {
                   className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
-              {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+              {errors.password && (
+                <p className="text-sm text-destructive">{errors.password}</p>
+              )}
             </div>
 
             <div className="flex justify-end">
-              <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+              <Link
+                to="/forgot-password"
+                className="text-sm text-primary hover:underline"
+              >
                 Forgot password?
               </Link>
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? "Signing in..." : "Sign In"}
             </Button>
 
             <div className="relative my-6">
@@ -165,7 +223,9 @@ export default function Login() {
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                <span className="bg-card px-2 text-muted-foreground">
+                  Or continue with
+                </span>
               </div>
             </div>
 
@@ -174,7 +234,14 @@ export default function Login() {
               variant="outline"
               className="w-full"
               onClick={() => {
-                window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`;
+                const state = role !== "user" ? role : undefined;
+                const params = new URLSearchParams();
+                params.append("mode", "login");
+                if (state) params.append("state", state);
+
+                window.location.href = `${
+                  import.meta.env.VITE_API_URL
+                }/auth/google?${params.toString()}`;
               }}
             >
               <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
@@ -199,36 +266,74 @@ export default function Login() {
             </Button>
           </form>
 
-          {role !== 'admin' && (
-            <div className="mt-6 text-center text-sm">
-              <span className="text-muted-foreground">Don't have an account? </span>
-              <Link
-                to={
-                  role === 'provider'
-                    ? '/provider/register'
-                    : role === 'delivery-partner' || role === 'delivery'
-                      ? '/delivery-partner/register'
-                      : '/register'
-                }
-                className="text-primary hover:underline font-medium"
-              >
-                Sign up
-              </Link>
+          {role !== "admin" && (
+            <div className="mt-6 text-center">
+              <span className="text-muted-foreground text-sm">
+                Don't have an account?{" "}
+              </span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="link" size="sm" className="gap-1 p-0 h-auto font-medium">
+                    Sign up
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-56">
+                  <DropdownMenuItem asChild>
+                    <Link to="/register" className="flex items-center gap-2 cursor-pointer">
+                      <User className="h-4 w-4" />
+                      User Sign Up
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/provider/register" className="flex items-center gap-2 cursor-pointer">
+                      <Store className="h-4 w-4" />
+                      Restaurant Sign Up
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/delivery-partner/register" className="flex items-center gap-2 cursor-pointer">
+                      <Truck className="h-4 w-4" />
+                      Delivery Partner Sign Up
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )}
 
           <div className="mt-4 flex justify-center gap-4 text-sm">
-            {role !== 'user' && (
-              <Link to="/login" className="text-muted-foreground hover:text-primary">User Login</Link>
+            {role !== "user" && (
+              <Link
+                to="/login"
+                className="text-muted-foreground hover:text-primary"
+              >
+                User Login
+              </Link>
             )}
-            {role !== 'provider' && (
-              <Link to="/login?role=provider" className="text-muted-foreground hover:text-primary">Provider Login</Link>
+            {role !== "restaurant" && (
+              <Link
+                to="/login?role=restaurant"
+                className="text-muted-foreground hover:text-primary"
+              >
+                Restaurant Login
+              </Link>
             )}
-            {role !== 'delivery-partner' && role !== 'delivery' && (
-              <Link to="/login?role=delivery-partner" className="text-muted-foreground hover:text-primary">Delivery Partner</Link>
+            {role !== "delivery-partner" && role !== "delivery" && (
+              <Link
+                to="/login?role=delivery-partner"
+                className="text-muted-foreground hover:text-primary"
+              >
+                Delivery Partner
+              </Link>
             )}
-            {role !== 'admin' && (
-              <Link to="/login?role=admin" className="text-muted-foreground hover:text-primary">Admin Login</Link>
+            {role !== "admin" && (
+              <Link
+                to="/login?role=admin"
+                className="text-muted-foreground hover:text-primary"
+              >
+                Admin Login
+              </Link>
             )}
           </div>
         </CardContent>

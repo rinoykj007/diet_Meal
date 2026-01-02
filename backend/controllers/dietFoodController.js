@@ -247,11 +247,12 @@ exports.createDietFood = async (req, res) => {
       });
     }
 
-    // Check if restaurant is approved
+    // Check if restaurant is approved - Block all menu additions before approval
     if (!restaurant.isApproved) {
-      return res.status(400).json({
+      return res.status(403).json({
         success: false,
-        message: 'Restaurant must be approved before adding food items'
+        message: 'Your restaurant must be approved by admin before you can add menu items. Please wait for approval.',
+        isApproved: false
       });
     }
 
@@ -285,6 +286,18 @@ exports.createDietFood = async (req, res) => {
       data: populatedDietFood
     });
   } catch (error) {
+    console.error('Error creating diet food:', error);
+
+    // Handle Mongoose validation errors with detailed messages
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(e => e.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: messages
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: 'Server error',
@@ -368,6 +381,18 @@ exports.updateDietFood = async (req, res) => {
       data: updatedDietFood
     });
   } catch (error) {
+    console.error('Error updating diet food:', error);
+
+    // Handle Mongoose validation errors with detailed messages
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(e => e.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: messages
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: 'Server error',

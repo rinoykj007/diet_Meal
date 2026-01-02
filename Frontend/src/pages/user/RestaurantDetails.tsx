@@ -205,6 +205,53 @@ const RestaurantDetails = () => {
     return cart.reduce((total, item) => total + item.price * item.quantity, 0);
   };
 
+  const getTotalCalories = () => {
+    return cart.reduce((total, item) => total + item.calories * item.quantity, 0);
+  };
+
+  const getCalorieBudgetStatus = () => {
+    if (!userPreferences?.mealBudgets || !showPersonalized) return null;
+
+    const totalCalories = getTotalCalories();
+    const mealBudget = userPreferences.mealBudgets[selectedMealType as keyof typeof userPreferences.mealBudgets];
+
+    if (!mealBudget) return null;
+
+    const percentage = (totalCalories / mealBudget.target) * 100;
+
+    if (totalCalories > mealBudget.max) {
+      return {
+        status: 'over',
+        message: `⚠️ Over budget! ${totalCalories} cal exceeds your ${selectedMealType} max (${mealBudget.max} cal)`,
+        color: 'bg-red-50 border-red-300 text-red-800',
+        percentage
+      };
+    } else if (totalCalories >= mealBudget.target) {
+      return {
+        status: 'at-target',
+        message: `✓ Target reached! ${totalCalories} cal meets your ${selectedMealType} budget (${mealBudget.target} cal)`,
+        color: 'bg-green-50 border-green-300 text-green-800',
+        percentage
+      };
+    } else if (totalCalories >= mealBudget.min) {
+      return {
+        status: 'in-range',
+        message: `✓ In range! ${totalCalories} cal is within your ${selectedMealType} budget (${mealBudget.min}-${mealBudget.max} cal)`,
+        color: 'bg-blue-50 border-blue-300 text-blue-800',
+        percentage
+      };
+    } else if (totalCalories > 0) {
+      return {
+        status: 'under',
+        message: `${totalCalories} cal / ${mealBudget.target} cal target`,
+        color: 'bg-gray-50 border-gray-300 text-gray-700',
+        percentage
+      };
+    }
+
+    return null;
+  };
+
   const handleCheckout = async () => {
     if (!deliveryAddress.street || !deliveryAddress.city || !deliveryAddress.state) {
       toast({
@@ -467,84 +514,104 @@ const RestaurantDetails = () => {
             )}
 
             {!loading && (
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {dietFoods.map((food) => (
-                  <Card key={food._id} className={`${showPersonalized && food.personalized ? getCalorieBadgeColor(food) : ''} ${showPersonalized && food.personalized?.macroScore >= 80 ? 'border-2' : ''}`}>
-                    <CardContent className="p-4">
-                      <div className="flex gap-4">
-                        {food.image && (
-                          <img
-                            src={food.image}
-                            alt={food.name}
-                            className="w-24 h-24 object-cover rounded"
-                          />
-                        )}
+                  <Card key={food._id} className={`flex flex-col ${showPersonalized && food.personalized ? getCalorieBadgeColor(food) : ''} ${showPersonalized && food.personalized?.macroScore >= 80 ? 'border-2' : ''}`}>
+                    <CardContent className="p-4 flex flex-col flex-grow">
+                      {/* Food Image */}
+                      {food.image && (
+                        <img
+                          src={food.image}
+                          alt={food.name}
+                          className="w-full h-40 object-cover rounded-lg mb-3"
+                        />
+                      )}
+
+                      {/* Header with Title and Price */}
+                      <div className="flex justify-between items-start mb-2">
                         <div className="flex-1">
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <div className="flex items-center gap-2 mb-1">
-                                <h3 className="font-semibold text-lg">{food.name}</h3>
-                                {showPersonalized && food.personalized && food.personalized.macroScore >= 80 && (
-                                  <Badge className="bg-green-100 text-green-800 border-green-300">
-                                    <Sparkles className="h-3 w-3 mr-1" />
-                                    Top Match
-                                  </Badge>
-                                )}
-                              </div>
-                              <div className="flex flex-wrap gap-1 mb-1">
-                                <Badge className={getDietTypeBadgeColor(food.dietType)} variant="secondary">
-                                  {food.dietType}
-                                </Badge>
-                                {showPersonalized && food.personalized?.badges.slice(0, 3).map((badge, idx) => {
-                                  const badgeInfo = getPersonalizedBadgeInfo(badge);
-                                  const Icon = badgeInfo.icon;
-                                  return (
-                                    <Badge key={idx} className={badgeInfo.color} variant="secondary">
-                                      <Icon className="h-3 w-3 mr-1" />
-                                      {badgeInfo.label}
-                                    </Badge>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-xl font-bold text-primary">${food.price.toFixed(2)}</p>
-                              {food.servingSize && (
-                                <p className="text-xs text-gray-500">{food.servingSize}</p>
-                              )}
-                              {showPersonalized && food.personalized && (
-                                <p className="text-xs font-semibold text-blue-600 mt-1">
-                                  Score: {food.personalized.macroScore}/100
-                                </p>
-                              )}
-                            </div>
-                          </div>
-
-                          {showPersonalized && food.personalized && food.personalized.matchReasons.length > 0 && (
-                            <div className="mb-2 p-2 bg-blue-50 rounded text-xs text-blue-800">
-                              <strong>Why recommended:</strong> {food.personalized.matchReasons.join(' • ')}
-                            </div>
-                          )}
-
-                          <p className="text-sm text-gray-600 mb-2">{food.description}</p>
-                          <div className="flex justify-between items-center">
-                            <div className="text-xs text-gray-500 space-x-3">
-                              <span>{food.calories} cal</span>
-                              <span>P: {food.protein}g</span>
-                              <span>C: {food.carbs}g</span>
-                              <span>F: {food.fat}g</span>
-                            </div>
-                            <Button
-                              onClick={() => addToCart(food)}
-                              disabled={!food.isAvailable}
-                              size="sm"
-                            >
-                              <Plus className="h-4 w-4 mr-1" />
-                              Add to Cart
-                            </Button>
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <h3 className="font-semibold text-lg">{food.name}</h3>
+                            {showPersonalized && food.personalized && food.personalized.macroScore >= 80 && (
+                              <Badge className="bg-green-100 text-green-800 border-green-300">
+                                <Sparkles className="h-3 w-3 mr-1" />
+                                Top Match
+                              </Badge>
+                            )}
                           </div>
                         </div>
                       </div>
+
+                      {/* Price and Serving */}
+                      <div className="flex justify-between items-center mb-2">
+                        <p className="text-2xl font-bold text-primary">${food.price.toFixed(2)}</p>
+                        {food.servingSize && (
+                          <p className="text-xs text-gray-500">{food.servingSize}</p>
+                        )}
+                      </div>
+
+                      {/* Badges */}
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        <Badge className={getDietTypeBadgeColor(food.dietType)} variant="secondary">
+                          {food.dietType}
+                        </Badge>
+                        {showPersonalized && food.personalized?.badges.slice(0, 2).map((badge, idx) => {
+                          const badgeInfo = getPersonalizedBadgeInfo(badge);
+                          const Icon = badgeInfo.icon;
+                          return (
+                            <Badge key={idx} className={badgeInfo.color} variant="secondary">
+                              <Icon className="h-3 w-3 mr-1" />
+                              {badgeInfo.label}
+                            </Badge>
+                          );
+                        })}
+                        {showPersonalized && food.personalized && (
+                          <Badge variant="secondary" className="bg-blue-50 text-blue-700">
+                            Score: {food.personalized.macroScore}/100
+                          </Badge>
+                        )}
+                      </div>
+
+                      {/* Match Reasons */}
+                      {showPersonalized && food.personalized && food.personalized.matchReasons.length > 0 && (
+                        <div className="mb-2 p-2 bg-blue-50 rounded text-xs text-blue-800">
+                          <strong>Why:</strong> {food.personalized.matchReasons.slice(0, 2).join(' • ')}
+                        </div>
+                      )}
+
+                      {/* Description */}
+                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">{food.description}</p>
+
+                      {/* Nutrition Info - Grid Layout */}
+                      <div className="grid grid-cols-2 gap-2 mb-3 p-2 bg-gray-50 rounded text-xs">
+                        <div>
+                          <span className="text-gray-500">Calories:</span>
+                          <div className="font-bold text-sm">{food.calories}</div>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Protein:</span>
+                          <div className="font-bold text-sm">{food.protein}g</div>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Carbs:</span>
+                          <div className="font-bold text-sm">{food.carbs}g</div>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Fats:</span>
+                          <div className="font-bold text-sm">{food.fat}g</div>
+                        </div>
+                      </div>
+
+                      {/* Add to Cart Button */}
+                      <Button
+                        onClick={() => addToCart(food)}
+                        disabled={!food.isAvailable}
+                        className="w-full mt-auto"
+                        size="sm"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        {food.isAvailable ? 'Add to Cart' : 'Unavailable'}
+                      </Button>
                     </CardContent>
                   </Card>
                 ))}
@@ -601,13 +668,45 @@ const RestaurantDetails = () => {
                       ))}
                     </div>
 
+                    {/* Calorie Budget Reminder */}
+                    {getCalorieBudgetStatus() && (
+                      <div className={`border rounded-lg p-3 mb-3 text-sm ${getCalorieBudgetStatus()?.color}`}>
+                        <div className="flex items-start gap-2">
+                          {getCalorieBudgetStatus()?.status === 'over' && <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />}
+                          {getCalorieBudgetStatus()?.status === 'at-target' && <CheckCircle2 className="h-4 w-4 flex-shrink-0 mt-0.5" />}
+                          {getCalorieBudgetStatus()?.status === 'in-range' && <CheckCircle2 className="h-4 w-4 flex-shrink-0 mt-0.5" />}
+                          <div className="flex-1">
+                            <p className="font-medium">{getCalorieBudgetStatus()?.message}</p>
+                            {/* Progress Bar */}
+                            <div className="mt-2 w-full bg-white rounded-full h-2 overflow-hidden">
+                              <div
+                                className={`h-2 rounded-full transition-all ${
+                                  getCalorieBudgetStatus()?.status === 'over' ? 'bg-red-500' :
+                                  getCalorieBudgetStatus()?.status === 'at-target' ? 'bg-green-500' :
+                                  getCalorieBudgetStatus()?.status === 'in-range' ? 'bg-blue-500' :
+                                  'bg-gray-400'
+                                }`}
+                                style={{ width: `${Math.min(getCalorieBudgetStatus()?.percentage || 0, 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="border-t pt-4">
-                      <div className="flex justify-between items-center mb-4">
-                        <span className="font-bold text-lg">Total:</span>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-bold text-lg">Total Price:</span>
                         <span className="font-bold text-2xl text-primary">
                           ${getTotalPrice().toFixed(2)}
                         </span>
                       </div>
+                      {cart.length > 0 && (
+                        <div className="flex justify-between items-center mb-4 text-sm text-gray-600">
+                          <span>Total Calories:</span>
+                          <span className="font-semibold">{getTotalCalories()} cal</span>
+                        </div>
+                      )}
                       <Button
                         className="w-full"
                         onClick={() => setShowCheckout(true)}

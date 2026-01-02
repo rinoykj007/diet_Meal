@@ -64,3 +64,6 @@ seedData.js
 # Google OAuth credentials (NEVER commit these!)
 **/client_secret*.json
 client_secret*.json
+
+# doc
+..z_doc/

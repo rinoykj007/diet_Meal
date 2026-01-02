@@ -166,7 +166,11 @@ export default function Register() {
               variant="outline"
               className="w-full"
               onClick={() => {
-                window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`;
+                const params = new URLSearchParams();
+                params.append("mode", "register");
+                params.append("state", "user");
+
+                window.location.href = `${import.meta.env.VITE_API_URL}/auth/google?${params.toString()}`;
               }}
             >
               <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
@@ -195,12 +199,6 @@ export default function Register() {
             <span className="text-muted-foreground">Already have an account? </span>
             <Link to="/login" className="text-primary hover:underline font-medium">
               Sign in
-            </Link>
-          </div>
-
-          <div className="mt-4 text-center">
-            <Link to="/provider/register" className="text-sm text-muted-foreground hover:text-primary">
-              Register as a Provider instead
             </Link>
           </div>
         </CardContent>
