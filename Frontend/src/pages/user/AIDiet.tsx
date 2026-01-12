@@ -681,21 +681,14 @@ export default function AIDiet() {
                                 Ingredients
                               </p>
                               <div className="flex flex-wrap gap-1">
-                                {meal.ingredients
-                                  .slice(0, 5)
-                                  .map((ingredient, idx) => (
-                                    <span
-                                      key={idx}
-                                      className="text-[10px] bg-secondary/50 px-1.5 py-0.5 rounded"
-                                    >
-                                      {ingredient}
-                                    </span>
-                                  ))}
-                                {meal.ingredients.length > 5 && (
-                                  <span className="text-[10px] bg-secondary/50 px-1.5 py-0.5 rounded font-semibold">
-                                    +{meal.ingredients.length - 5} more
+                                {meal.ingredients.map((ingredient, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="text-[10px] bg-secondary/50 px-1.5 py-0.5 rounded"
+                                  >
+                                    {ingredient}
                                   </span>
-                                )}
+                                ))}
                               </div>
                             </div>
 
