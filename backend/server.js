@@ -42,7 +42,7 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });
 
-// Error handler (must be last)
+// Error handler 
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;

@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { DashboardLayout } from '@/components/layouts/DashboardLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { aiDietAPI, shoppingListAPI } from '@/lib/api';
-import { useToast } from '@/hooks/use-toast';
-import RestaurantSelectionModal from '@/components/modals/RestaurantSelectionModal';
-import CustomRecipeOrderModal from '@/components/modals/CustomRecipeOrderModal';
-import ShoppingRequestModal from '@/components/modals/ShoppingRequestModal';
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { DashboardLayout } from "@/components/layouts/DashboardLayout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { aiDietAPI, shoppingListAPI } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
+import RestaurantSelectionModal from "@/components/modals/RestaurantSelectionModal";
+import CustomRecipeOrderModal from "@/components/modals/CustomRecipeOrderModal";
+import ShoppingRequestModal from "@/components/modals/ShoppingRequestModal";
 import {
   Sparkles,
   Calendar,
@@ -23,7 +23,7 @@ import {
   CheckCircle,
   Clock,
   Package,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface Meal {
   mealType: string;
@@ -75,7 +75,8 @@ export default function WeeklyDietPlan() {
   const [selectedRestaurant, setSelectedRestaurant] = useState<any>(null);
 
   // Shopping Request Modal State
-  const [shoppingRequestModalOpen, setShoppingRequestModalOpen] = useState(false);
+  const [shoppingRequestModalOpen, setShoppingRequestModalOpen] =
+    useState(false);
 
   // Shopping Request Status State
   const [shoppingRequest, setShoppingRequest] = useState<any>(null);
@@ -95,7 +96,11 @@ export default function WeeklyDietPlan() {
     // If day parameter is provided, set it as the selected day
     if (day && planData) {
       const dayIndex = parseInt(day);
-      if (!isNaN(dayIndex) && dayIndex >= 0 && dayIndex < (planData.recommendation.weeklyPlan?.length || 0)) {
+      if (
+        !isNaN(dayIndex) &&
+        dayIndex >= 0 &&
+        dayIndex < (planData.recommendation.weeklyPlan?.length || 0)
+      ) {
         setSelectedDay(dayIndex);
       }
     }
@@ -103,7 +108,7 @@ export default function WeeklyDietPlan() {
 
   const fetchPlanDetails = async () => {
     if (!id) {
-      navigate('/meal-plans');
+      navigate("/meal-plans");
       return;
     }
 
@@ -117,23 +122,24 @@ export default function WeeklyDietPlan() {
 
       if (!plan) {
         toast({
-          title: 'Error',
-          description: 'Meal plan not found',
-          variant: 'destructive',
+          title: "Error",
+          description: "Meal plan not found",
+          variant: "destructive",
         });
-        navigate('/meal-plans');
+        navigate("/meal-plans");
         return;
       }
 
       setPlanData(plan);
     } catch (error: any) {
-      console.error('Error fetching plan details:', error);
+      console.error("Error fetching plan details:", error);
       toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Failed to load meal plan',
-        variant: 'destructive',
+        title: "Error",
+        description:
+          error.response?.data?.message || "Failed to load meal plan",
+        variant: "destructive",
       });
-      navigate('/meal-plans');
+      navigate("/meal-plans");
     } finally {
       setLoading(false);
     }
@@ -148,14 +154,14 @@ export default function WeeklyDietPlan() {
       const requests = response.data.data || [];
 
       // Find the request for this meal plan that's not cancelled or delivered
-      const activeRequest = requests.find((req: any) =>
-        req.mealPlanId === planData._id &&
-        req.status !== 'cancelled'
+      const activeRequest = requests.find(
+        (req: any) =>
+          req.mealPlanId === planData._id && req.status !== "cancelled"
       );
 
       setShoppingRequest(activeRequest || null);
     } catch (error) {
-      console.error('Error fetching shopping request:', error);
+      console.error("Error fetching shopping request:", error);
     } finally {
       setLoadingRequest(false);
     }
@@ -198,7 +204,11 @@ export default function WeeklyDietPlan() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <Button variant="ghost" onClick={() => navigate('/meal-plans')} className="mb-2">
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/meal-plans")}
+              className="mb-2"
+            >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Meal Plans
             </Button>
@@ -207,10 +217,10 @@ export default function WeeklyDietPlan() {
               AI Personalized Plan
             </h1>
             <p className="text-muted-foreground mt-1">
-              {new Date(planData.createdAt).toLocaleDateString('en-US', {
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric',
+              {new Date(planData.createdAt).toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
               })}
             </p>
           </div>
@@ -234,7 +244,7 @@ export default function WeeklyDietPlan() {
                 <span className="font-semibold">Goals:</span>
                 <span className="text-muted-foreground">
                   {Array.isArray(planData.preferences.healthGoals)
-                    ? planData.preferences.healthGoals.join(', ')
+                    ? planData.preferences.healthGoals.join(", ")
                     : planData.preferences.healthGoals}
                 </span>
               </div>
@@ -257,7 +267,7 @@ export default function WeeklyDietPlan() {
                 {recommendation.weeklyPlan.map((dayPlan, index) => (
                   <Button
                     key={index}
-                    variant={selectedDay === index ? 'default' : 'outline'}
+                    variant={selectedDay === index ? "default" : "outline"}
                     onClick={() => setSelectedDay(index)}
                     className="whitespace-nowrap flex-shrink-0"
                   >
@@ -277,83 +287,117 @@ export default function WeeklyDietPlan() {
 
               {/* Meals for selected day - Modern Compact Layout */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {recommendation.weeklyPlan[selectedDay]?.meals.map((meal, index) => (
-                  <Card key={index} className="flex flex-col h-full overflow-hidden hover:shadow-lg transition-shadow">
-                    {/* Meal Header - Compact */}
-                    <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-2 border-b">
-                      <div className="flex items-center gap-2">
-                        <ChefHat className="w-4 h-4 text-primary" />
-                        <span className="text-sm font-semibold text-primary">{meal.mealType}</span>
-                      </div>
-                      <h3 className="font-bold text-base mt-0.5">{meal.name}</h3>
-                    </div>
-
-                    {/* Card Content - Grows to fill space */}
-                    <div className="p-4 space-y-2.5 flex-grow flex flex-col">
-                      {/* Description */}
-                      <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                        {meal.description}
-                      </p>
-
-                      {/* Nutrition info - Compact 2x2 Grid */}
-                      <div className="grid grid-cols-2 gap-1.5 text-xs bg-gradient-to-br from-muted/50 to-muted/30 p-2.5 rounded-lg">
-                        <div className="flex flex-col">
-                          <span className="text-muted-foreground text-[10px] uppercase tracking-wide">Calories</span>
-                          <span className="text-xl font-bold text-primary leading-tight">{meal.calories}</span>
+                {recommendation.weeklyPlan[selectedDay]?.meals.map(
+                  (meal, index) => (
+                    <Card
+                      key={index}
+                      className="flex flex-col h-full overflow-hidden hover:shadow-lg transition-shadow"
+                    >
+                      {/* Meal Header - Compact */}
+                      <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-2 border-b">
+                        <div className="flex items-center gap-2">
+                          <ChefHat className="w-4 h-4 text-primary" />
+                          <span className="text-sm font-semibold text-primary">
+                            {meal.mealType}
+                          </span>
                         </div>
-                        <div className="flex flex-col">
-                          <span className="text-muted-foreground text-[10px] uppercase tracking-wide">Protein</span>
-                          <span className="text-xl font-bold text-primary leading-tight">{meal.macros.protein}g</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-muted-foreground text-[10px] uppercase tracking-wide">Carbs</span>
-                          <span className="text-xl font-bold text-primary leading-tight">{meal.macros.carbs}g</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-muted-foreground text-[10px] uppercase tracking-wide">Fats</span>
-                          <span className="text-xl font-bold text-primary leading-tight">{meal.macros.fats}g</span>
-                        </div>
+                        <h3 className="font-bold text-base mt-0.5">
+                          {meal.name}
+                        </h3>
                       </div>
 
-                      {/* Ingredients - Compact */}
-                      <div>
-                        <p className="font-semibold text-xs mb-1 text-foreground/80">Ingredients</p>
-                        <div className="flex flex-wrap gap-1">
-                          {meal.ingredients.slice(0, 5).map((ingredient, idx) => (
-                            <span key={idx} className="text-[10px] bg-secondary/50 px-1.5 py-0.5 rounded">
-                              {ingredient}
-                            </span>
-                          ))}
-                          {meal.ingredients.length > 5 && (
-                            <span className="text-[10px] bg-secondary/50 px-1.5 py-0.5 rounded font-semibold">
-                              +{meal.ingredients.length - 5} more
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Instructions - Compact */}
-                      <div className="flex-grow">
-                        <p className="font-semibold text-xs mb-1 text-foreground/80">Instructions</p>
-                        <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2">
-                          {meal.instructions}
+                      {/* Card Content - Grows to fill space */}
+                      <div className="p-4 space-y-2.5 flex-grow flex flex-col">
+                        {/* Description */}
+                        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                          {meal.description}
                         </p>
-                      </div>
-                    </div>
 
-                    {/* Order Button - Separate section at bottom */}
-                    <div className="p-4 pt-0">
-                      <Button
-                        onClick={() => handleOrderFromRestaurant(meal)}
-                        className="w-full h-9 text-sm"
-                        size="sm"
-                      >
-                        <Store className="w-3.5 h-3.5 mr-1.5" />
-                        Order from Restaurant
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
+                        {/* Nutrition info - Compact 2x2 Grid */}
+                        <div className="grid grid-cols-2 gap-1.5 text-xs bg-gradient-to-br from-muted/50 to-muted/30 p-2.5 rounded-lg">
+                          <div className="flex flex-col">
+                            <span className="text-muted-foreground text-[10px] uppercase tracking-wide">
+                              Calories
+                            </span>
+                            <span className="text-xl font-bold text-primary leading-tight">
+                              {meal.calories}
+                            </span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-muted-foreground text-[10px] uppercase tracking-wide">
+                              Protein
+                            </span>
+                            <span className="text-xl font-bold text-primary leading-tight">
+                              {meal.macros.protein}g
+                            </span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-muted-foreground text-[10px] uppercase tracking-wide">
+                              Carbs
+                            </span>
+                            <span className="text-xl font-bold text-primary leading-tight">
+                              {meal.macros.carbs}g
+                            </span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-muted-foreground text-[10px] uppercase tracking-wide">
+                              Fats
+                            </span>
+                            <span className="text-xl font-bold text-primary leading-tight">
+                              {meal.macros.fats}g
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Ingredients - Compact */}
+                        <div>
+                          <p className="font-semibold text-xs mb-1 text-foreground/80">
+                            Ingredients
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {meal.ingredients
+                              .slice(0, 5)
+                              .map((ingredient, idx) => (
+                                <span
+                                  key={idx}
+                                  className="text-[10px] bg-secondary/50 px-1.5 py-0.5 rounded"
+                                >
+                                  {ingredient}
+                                </span>
+                              ))}
+                            {meal.ingredients.length > 5 && (
+                              <span className="text-[10px] bg-secondary/50 px-1.5 py-0.5 rounded font-semibold">
+                                +{meal.ingredients.length - 5} more
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Instructions - Compact */}
+                        <div className="flex-grow">
+                          <p className="font-semibold text-xs mb-1 text-foreground/80">
+                            Instructions
+                          </p>
+                          <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2">
+                            {meal.instructions}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Order Button - Separate section at bottom */}
+                      <div className="p-4 pt-0">
+                        <Button
+                          onClick={() => handleOrderFromRestaurant(meal)}
+                          className="w-full h-9 text-sm"
+                          size="sm"
+                        >
+                          <Store className="w-3.5 h-3.5 mr-1.5" />
+                          Order from Restaurant
+                        </Button>
+                      </div>
+                    </Card>
+                  )
+                )}
               </div>
             </div>
           </CardContent>
@@ -397,12 +441,14 @@ export default function WeeklyDietPlan() {
               {loadingRequest ? (
                 <div className="text-center py-4">
                   <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
-                  <p className="text-sm text-muted-foreground mt-2">Checking status...</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Checking status...
+                  </p>
                 </div>
               ) : shoppingRequest ? (
                 <div className="space-y-3">
                   {/* Pending Status */}
-                  {shoppingRequest.status === 'pending' && (
+                  {shoppingRequest.status === "pending" && (
                     <div className="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
                       <div className="flex items-start gap-3">
                         <Clock className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
@@ -411,7 +457,8 @@ export default function WeeklyDietPlan() {
                             Request Sent - Waiting for Delivery Partner
                           </p>
                           <p className="text-sm text-yellow-800">
-                            Your shopping list request is pending. A delivery partner will accept it soon!
+                            Your shopping list request is pending. A delivery
+                            partner will accept it soon!
                           </p>
                         </div>
                       </div>
@@ -419,63 +466,83 @@ export default function WeeklyDietPlan() {
                   )}
 
                   {/* Accepted Status */}
-                  {shoppingRequest.status === 'accepted' && shoppingRequest.deliveryPartnerId && (
-                    <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
-                      <div className="flex items-start gap-3">
-                        <User className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                        <div className="flex-1">
-                          <p className="font-semibold text-blue-900 mb-1">
-                            ✅ Delivery Partner Assigned!
-                          </p>
-                          <p className="text-sm text-blue-800 mb-2">
-                            <strong>{shoppingRequest.deliveryPartnerId.fullName}</strong> has accepted your request and will start shopping soon.
-                          </p>
-                          <p className="text-xs text-blue-700">
-                            📞 Contact: {shoppingRequest.deliveryPartnerId.phone}
-                          </p>
+                  {shoppingRequest.status === "accepted" &&
+                    shoppingRequest.deliveryPartnerId && (
+                      <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <User className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1">
+                            <p className="font-semibold text-blue-900 mb-1">
+                              Delivery Partner Assigned!
+                            </p>
+                            <p className="text-sm text-blue-800 mb-2">
+                              <strong>
+                                {shoppingRequest.deliveryPartnerId.fullName}
+                              </strong>{" "}
+                              has accepted your request and will start shopping
+                              soon.
+                            </p>
+                            <p className="text-xs text-blue-700">
+                              Contact: {shoppingRequest.deliveryPartnerId.phone}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* In-Progress Status */}
-                  {shoppingRequest.status === 'in-progress' && shoppingRequest.deliveryPartnerId && (
-                    <div className="p-4 bg-purple-50 border-2 border-purple-200 rounded-lg">
-                      <div className="flex items-start gap-3">
-                        <Package className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0 animate-pulse" />
-                        <div className="flex-1">
-                          <p className="font-semibold text-purple-900 mb-1">
-                            🛒 Shopping in Progress
-                          </p>
-                          <p className="text-sm text-purple-800 mb-2">
-                            <strong>{shoppingRequest.deliveryPartnerId.fullName}</strong> is currently shopping for your items!
-                          </p>
-                          <p className="text-xs text-purple-700">
-                            📞 Contact: {shoppingRequest.deliveryPartnerId.phone}
-                          </p>
+                  {shoppingRequest.status === "in-progress" &&
+                    shoppingRequest.deliveryPartnerId && (
+                      <div className="p-4 bg-purple-50 border-2 border-purple-200 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <Package className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0 animate-pulse" />
+                          <div className="flex-1">
+                            <p className="font-semibold text-purple-900 mb-1">
+                              Shopping in Progress
+                            </p>
+                            <p className="text-sm text-purple-800 mb-2">
+                              <strong>
+                                {shoppingRequest.deliveryPartnerId.fullName}
+                              </strong>{" "}
+                              is currently shopping for your items!
+                            </p>
+                            <p className="text-xs text-purple-700">
+                              Contact: {shoppingRequest.deliveryPartnerId.phone}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* Delivered Status */}
-                  {shoppingRequest.status === 'delivered' && (
+                  {shoppingRequest.status === "delivered" && (
                     <div className="p-4 bg-green-50 border-2 border-green-200 rounded-lg">
                       <div className="flex items-start gap-3">
                         <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
                         <div className="flex-1">
                           <p className="font-semibold text-green-900 mb-1">
-                            ✅ Items Delivered!
+                            Items Delivered!
                           </p>
                           <p className="text-sm text-green-800 mb-2">
-                            Your shopping items have been successfully delivered.
+                            Your shopping items have been successfully
+                            delivered.
                           </p>
                           {shoppingRequest.finalCost && (
                             <div className="text-sm text-green-800 space-y-1 mt-2 p-2 bg-green-100 rounded">
-                              <p>💰 Grocery Cost: ${shoppingRequest.finalCost.toFixed(2)}</p>
-                              <p>🚚 Delivery Fee: ${shoppingRequest.deliveryFee.toFixed(2)}</p>
+                              <p>
+                                Grocery Cost: $
+                                {shoppingRequest.finalCost.toFixed(2)}
+                              </p>
+                              <p>
+                                Delivery Fee: $
+                                {shoppingRequest.deliveryFee.toFixed(2)}
+                              </p>
                               <p className="font-bold border-t border-green-300 pt-1 mt-1">
-                                Total Paid: ${(shoppingRequest.finalCost + shoppingRequest.deliveryFee).toFixed(2)}
+                                Total Paid: $
+                                {(
+                                  shoppingRequest.finalCost +
+                                  shoppingRequest.deliveryFee
+                                ).toFixed(2)}
                               </p>
                             </div>
                           )}
@@ -491,7 +558,7 @@ export default function WeeklyDietPlan() {
                     className="w-full"
                     size="sm"
                   >
-                    🔄 Refresh Status
+                    Refresh Status
                   </Button>
                 </div>
               ) : (
@@ -505,7 +572,7 @@ export default function WeeklyDietPlan() {
                     Buy All Items - Get Delivered
                   </Button>
                   <p className="text-sm text-muted-foreground text-center mt-2">
-                    💰 Fixed delivery fee: $10.00 • 💵 Cash on delivery
+                    Fixed delivery fee: $10.00 • Cash on delivery
                   </p>
                 </div>
               )}
@@ -548,15 +615,19 @@ export default function WeeklyDietPlan() {
           setSelectedMeal(null);
           setSelectedRestaurant(null);
         }}
-        recipe={selectedMeal ? {
-          recipeName: selectedMeal.name,
-          description: selectedMeal.description,
-          ingredients: selectedMeal.ingredients,
-          instructions: selectedMeal.instructions,
-          calories: selectedMeal.calories,
-          macros: selectedMeal.macros,
-          mealType: selectedMeal.mealType
-        } : null}
+        recipe={
+          selectedMeal
+            ? {
+                recipeName: selectedMeal.name,
+                description: selectedMeal.description,
+                ingredients: selectedMeal.ingredients,
+                instructions: selectedMeal.instructions,
+                calories: selectedMeal.calories,
+                macros: selectedMeal.macros,
+                mealType: selectedMeal.mealType,
+              }
+            : null
+        }
         restaurant={selectedRestaurant}
       />
 

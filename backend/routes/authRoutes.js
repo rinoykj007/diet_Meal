@@ -16,16 +16,20 @@ const {
 const { protect, authorize } = require("../middleware/auth");
 
 // Session middleware for OAuth flow
-router.use(session({
-  secret: process.env.SESSION_SECRET || 'nutriplan-session-secret-key-change-in-production',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    maxAge: 10 * 60 * 1000, // 10 minutes
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production'
-  }
-}));
+router.use(
+  session({
+    secret:
+      process.env.SESSION_SECRET ||
+      "nutriplan-session-secret-key-change-in-production",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 10 * 60 * 1000, // 10 minutes
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+    },
+  })
+);
 
 router.post("/register", register);
 router.post("/login", login);
@@ -34,12 +38,12 @@ router.put("/profile", protect, updateProfile);
 
 // Google OAuth routes
 router.get("/google", (req, res, next) => {
-  const state = req.query.state; // role: restaurant, delivery-partner, admin, or user
-  const mode = req.query.mode; // 'login' or 'register'
+  const state = req.query.state;
+  const mode = req.query.mode;
 
   // Store mode in session
-  req.session.isRegistration = mode === 'register';
-  req.session.intendedRole = state || 'user';
+  req.session.isRegistration = mode === "register";
+  req.session.intendedRole = state || "user";
 
   passport.authenticate("google", {
     scope: ["profile", "email"],
@@ -47,25 +51,34 @@ router.get("/google", (req, res, next) => {
   })(req, res, next);
 });
 
-router.get(
-  "/google/callback",
-  (req, res, next) => {
-    passport.authenticate("google", {
+router.get("/google/callback", (req, res, next) => {
+  passport.authenticate(
+    "google",
+    {
       failureRedirect: `${process.env.FRONTEND_URL}/login`,
       session: false,
-    }, (err, user, info) => {
+    },
+    (err, user, info) => {
       if (err) {
-        console.error('Google OAuth error:', err);
-        return res.redirect(`${process.env.FRONTEND_URL}/login?error=${encodeURIComponent('Authentication failed')}`);
+        console.error("Google OAuth error:", err);
+        return res.redirect(
+          `${process.env.FRONTEND_URL}/login?error=${encodeURIComponent(
+            "Authentication failed"
+          )}`
+        );
       }
 
       if (!user) {
         // Authentication failed - user returned false from strategy
-        const errorMessage = info?.message || 'Authentication failed';
-        const role = req.query.state || '';
-        const roleParam = role ? `&role=${role}` : '';
+        const errorMessage = info?.message || "Authentication failed";
+        const role = req.query.state || "";
+        const roleParam = role ? `&role=${role}` : "";
 
-        return res.redirect(`${process.env.FRONTEND_URL}/login?error=${encodeURIComponent(errorMessage)}${roleParam}`);
+        return res.redirect(
+          `${process.env.FRONTEND_URL}/login?error=${encodeURIComponent(
+            errorMessage
+          )}${roleParam}`
+        );
       }
 
       // Success - generate token
@@ -79,9 +92,9 @@ router.get(
       res.redirect(
         `${process.env.FRONTEND_URL}/auth/google/success?token=${token}${roleParam}`
       );
-    })(req, res, next);
-  }
-);
+    }
+  )(req, res, next);
+});
 
 // Admin only routes
 router.get("/users", protect, authorize("admin"), getAllUsers);

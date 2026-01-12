@@ -95,7 +95,7 @@ module.exports = function(passport) {
             user = await User.create({
               email,
               fullName: profile.displayName,
-              password: 'google-oauth-' + Date.now(), // Random password for OAuth users
+              password: 'google-oauth-' + Date.now(), 
               roles,
               googleId: profile.id,
             });

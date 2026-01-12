@@ -78,7 +78,7 @@ const dietFoodSchema = new mongoose.Schema({
   ingredients: [String],
   allergens: [String],
   servingSize: String,
-  preparationTime: Number, // in minutes
+  preparationTime: Number, 
   // Ratings
   rating: {
     type: Number,

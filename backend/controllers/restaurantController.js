@@ -193,7 +193,7 @@ exports.createRestaurant = async (req, res) => {
       phone,
       email,
       image,
-      isApproved: false // Needs admin approval
+      isApproved: false 
     });
 
     res.status(201).json({

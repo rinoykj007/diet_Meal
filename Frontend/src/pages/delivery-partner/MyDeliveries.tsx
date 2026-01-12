@@ -212,7 +212,7 @@ export default function MyDeliveries() {
 
                                                 <TableCell>
                                                     <Badge className="bg-purple-500 animate-pulse">
-                                                        🛒 Shopping
+                                                        Shopping
                                                     </Badge>
                                                 </TableCell>
 

@@ -67,7 +67,7 @@ exports.createOrder = async (req, res) => {
       items: orderItems,
       orderType: 'diet-food',
       deliveryAddress,
-      deliveryDate: deliveryDate || new Date(Date.now() + 24 * 60 * 60 * 1000), // Default: tomorrow
+      deliveryDate: deliveryDate || new Date(Date.now() + 24 * 60 * 60 * 1000), 
       totalAmount,
       paymentMethod: paymentMethod || 'cash',
       paymentStatus: paymentMethod === 'cash' ? 'pending' : 'pending',

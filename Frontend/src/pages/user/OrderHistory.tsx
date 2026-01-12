@@ -1,8 +1,14 @@
-import { useState, useEffect } from 'react';
-import { DashboardLayout } from '@/components/layouts/DashboardLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from "react";
+import { DashboardLayout } from "@/components/layouts/DashboardLayout";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -10,19 +16,28 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { orderAPI, shoppingListAPI } from '@/lib/api';
-import { useToast } from '@/hooks/use-toast';
-import { ShoppingBag, Calendar, DollarSign, Clock, ShoppingCart, User, Eye, Store } from 'lucide-react';
-import { format } from 'date-fns';
+} from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { orderAPI, shoppingListAPI } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
+import {
+  ShoppingBag,
+  Calendar,
+  DollarSign,
+  Clock,
+  ShoppingCart,
+  User,
+  Eye,
+  Store,
+} from "lucide-react";
+import { format } from "date-fns";
 
 interface OrderItem {
   dietFoodId: {
@@ -79,7 +94,7 @@ interface Order {
     };
     mealType: string;
   };
-  customPriceStatus?: 'pending-quote' | 'quoted' | 'accepted' | 'rejected';
+  customPriceStatus?: "pending-quote" | "quoted" | "accepted" | "rejected";
   quotedPrice?: number;
   quotedAt?: string;
 }
@@ -88,8 +103,10 @@ export default function OrderHistory() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [shoppingRequests, setShoppingRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>('all');
-  const [orderType, setOrderType] = useState<'all' | 'food' | 'shopping'>('all');
+  const [filter, setFilter] = useState<string>("all");
+  const [orderType, setOrderType] = useState<"all" | "food" | "shopping">(
+    "all"
+  );
   const { toast } = useToast();
 
   useEffect(() => {
@@ -101,16 +118,17 @@ export default function OrderHistory() {
       setLoading(true);
 
       // Fetch restaurant orders
-      if (orderType === 'all' || orderType === 'food') {
-        const params: any = { orderType: 'diet-food' };
-        if (filter !== 'all') {
+      if (orderType === "all" || orderType === "food") {
+        const params: any = { orderType: "diet-food" };
+        if (filter !== "all") {
           params.status = filter;
         }
         const response = await orderAPI.getMyOrders(params);
         const fetchedOrders = response.data.data || [];
         // Sort by createdAt descending (newest first)
-        fetchedOrders.sort((a: Order, b: Order) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        fetchedOrders.sort(
+          (a: Order, b: Order) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
         setOrders(fetchedOrders);
       } else {
@@ -118,21 +136,24 @@ export default function OrderHistory() {
       }
 
       // Fetch shopping list requests
-      if (orderType === 'all' || orderType === 'shopping') {
+      if (orderType === "all" || orderType === "shopping") {
         const shoppingParams: any = {};
-        if (filter !== 'all') {
+        if (filter !== "all") {
           // For 'delivered' filter, include both 'delivered' and 'confirmed' (legacy data)
-          if (filter === 'delivered') {
-            shoppingParams.status = 'delivered,confirmed';
+          if (filter === "delivered") {
+            shoppingParams.status = "delivered,confirmed";
           } else {
             shoppingParams.status = filter;
           }
         }
-        const shoppingResponse = await shoppingListAPI.getMyRequests(shoppingParams);
+        const shoppingResponse = await shoppingListAPI.getMyRequests(
+          shoppingParams
+        );
         const fetchedRequests = shoppingResponse.data.data || [];
         // Sort by createdAt descending (newest first)
-        fetchedRequests.sort((a: any, b: any) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        fetchedRequests.sort(
+          (a: any, b: any) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
         setShoppingRequests(fetchedRequests);
       } else {
@@ -140,9 +161,9 @@ export default function OrderHistory() {
       }
     } catch (error: any) {
       toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Failed to fetch orders',
-        variant: 'destructive',
+        title: "Error",
+        description: error.response?.data?.message || "Failed to fetch orders",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -150,20 +171,20 @@ export default function OrderHistory() {
   };
 
   const handleCancelOrder = async (orderId: string) => {
-    if (!confirm('Are you sure you want to cancel this order?')) return;
+    if (!confirm("Are you sure you want to cancel this order?")) return;
 
     try {
       await orderAPI.cancelOrder(orderId);
       toast({
-        title: 'Success',
-        description: 'Order cancelled successfully',
+        title: "Success",
+        description: "Order cancelled successfully",
       });
       fetchOrders();
     } catch (error: any) {
       toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Failed to cancel order',
-        variant: 'destructive',
+        title: "Error",
+        description: error.response?.data?.message || "Failed to cancel order",
+        variant: "destructive",
       });
     }
   };
@@ -172,34 +193,39 @@ export default function OrderHistory() {
     try {
       await orderAPI.acceptQuote(orderId);
       toast({
-        title: 'Success!',
+        title: "Success!",
         description: `Order placed! Price: $${price.toFixed(2)}`,
       });
       fetchOrders();
     } catch (error: any) {
       toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Failed to accept quote',
-        variant: 'destructive',
+        title: "Error",
+        description: error.response?.data?.message || "Failed to accept quote",
+        variant: "destructive",
       });
     }
   };
 
   const handleRejectQuote = async (orderId: string) => {
-    if (!confirm('Are you sure you want to reject this quote? The order will be cancelled.')) return;
+    if (
+      !confirm(
+        "Are you sure you want to reject this quote? The order will be cancelled."
+      )
+    )
+      return;
 
     try {
       await orderAPI.rejectQuote(orderId);
       toast({
-        title: 'Quote Rejected',
-        description: 'The order has been cancelled',
+        title: "Quote Rejected",
+        description: "The order has been cancelled",
       });
       fetchOrders();
     } catch (error: any) {
       toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Failed to reject quote',
-        variant: 'destructive',
+        title: "Error",
+        description: error.response?.data?.message || "Failed to reject quote",
+        variant: "destructive",
       });
     }
   };
@@ -208,26 +234,27 @@ export default function OrderHistory() {
     try {
       await shoppingListAPI.confirmDelivery(requestId);
       toast({
-        title: 'Delivery Confirmed',
-        description: 'Thank you for confirming the delivery!',
+        title: "Delivery Confirmed",
+        description: "Thank you for confirming the delivery!",
       });
       fetchOrders();
     } catch (error: any) {
       toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Failed to confirm delivery',
-        variant: 'destructive',
+        title: "Error",
+        description:
+          error.response?.data?.message || "Failed to confirm delivery",
+        variant: "destructive",
       });
     }
   };
 
   const handleDisputeDelivery = async (requestId: string) => {
-    const reason = prompt('Please describe the issue with your delivery:');
+    const reason = prompt("Please describe the issue with your delivery:");
     if (!reason || reason.trim().length === 0) {
       toast({
-        title: 'Cancelled',
-        description: 'Dispute cancelled - no reason provided',
-        variant: 'destructive',
+        title: "Cancelled",
+        description: "Dispute cancelled - no reason provided",
+        variant: "destructive",
       });
       return;
     }
@@ -235,63 +262,71 @@ export default function OrderHistory() {
     try {
       await shoppingListAPI.disputeDelivery(requestId, reason);
       toast({
-        title: 'Dispute Reported',
-        description: 'We will investigate the issue and contact you soon',
-        variant: 'destructive',
+        title: "Dispute Reported",
+        description: "We will investigate the issue and contact you soon",
+        variant: "destructive",
       });
       fetchOrders();
     } catch (error: any) {
       toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Failed to report dispute',
-        variant: 'destructive',
+        title: "Error",
+        description:
+          error.response?.data?.message || "Failed to report dispute",
+        variant: "destructive",
       });
     }
   };
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      confirmed: 'bg-green-100 text-green-800',
-      accepted: 'bg-blue-100 text-blue-800',
-      preparing: 'bg-purple-100 text-purple-800',
-      'in-progress': 'bg-purple-100 text-purple-800',
-      'out-for-delivery': 'bg-indigo-100 text-indigo-800',
-      delivered: 'bg-orange-100 text-orange-800',
-      disputed: 'bg-red-100 text-red-800',
-      cancelled: 'bg-red-100 text-red-800',
+      pending: "bg-yellow-100 text-yellow-800",
+      confirmed: "bg-green-100 text-green-800",
+      accepted: "bg-blue-100 text-blue-800",
+      preparing: "bg-purple-100 text-purple-800",
+      "in-progress": "bg-purple-100 text-purple-800",
+      "out-for-delivery": "bg-indigo-100 text-indigo-800",
+      delivered: "bg-orange-100 text-orange-800",
+      disputed: "bg-red-100 text-red-800",
+      cancelled: "bg-red-100 text-red-800",
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return colors[status] || "bg-gray-100 text-gray-800";
   };
 
   const getPaymentStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      paid: 'bg-green-100 text-green-800',
-      failed: 'bg-red-100 text-red-800',
-      refunded: 'bg-gray-100 text-gray-800',
+      pending: "bg-yellow-100 text-yellow-800",
+      paid: "bg-green-100 text-green-800",
+      failed: "bg-red-100 text-red-800",
+      refunded: "bg-gray-100 text-gray-800",
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return colors[status] || "bg-gray-100 text-gray-800";
   };
 
   // Helper function to get display status for shopping list
   const getShoppingListDisplayStatus = (request: any) => {
     // For shopping lists, show 'delivered' even if status is 'confirmed' (legacy data)
-    if (request.status === 'confirmed') {
-      return 'delivered';
+    if (request.status === "confirmed") {
+      return "delivered";
     }
     return request.status;
   };
 
   // Dynamic filter options based on order type
   const getFilterOptions = () => {
-    if (orderType === 'shopping') {
-      return ['all', 'pending', 'delivered', 'disputed', 'cancelled'];
-    } else if (orderType === 'food') {
-      return ['all', 'pending', 'confirmed', 'delivered', 'cancelled'];
+    if (orderType === "shopping") {
+      return ["all", "pending", "delivered", "disputed", "cancelled"];
+    } else if (orderType === "food") {
+      return ["all", "pending", "confirmed", "delivered", "cancelled"];
     } else {
       // All orders - show union of both
-      return ['all', 'pending', 'confirmed', 'delivered', 'disputed', 'cancelled'];
+      return [
+        "all",
+        "pending",
+        "confirmed",
+        "delivered",
+        "disputed",
+        "cancelled",
+      ];
     }
   };
 
@@ -299,15 +334,23 @@ export default function OrderHistory() {
     <DashboardLayout role="user">
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-heading font-bold">Order History</h1>
-          <p className="text-muted-foreground mt-1">View your past and current orders</p>
+          <h1 className="text-2xl md:text-3xl font-heading font-bold">
+            Order History
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            View your past and current orders
+          </p>
         </div>
 
         {/* Tabs for Order Type */}
-        <Tabs value={orderType} onValueChange={(value) => {
-          setOrderType(value as any);
-          setFilter('all'); // Reset filter when switching tabs
-        }} className="w-full">
+        <Tabs
+          value={orderType}
+          onValueChange={(value) => {
+            setOrderType(value as any);
+            setFilter("all"); // Reset filter when switching tabs
+          }}
+          className="w-full"
+        >
           <TabsList className="grid w-full max-w-md grid-cols-3">
             <TabsTrigger value="all">All Orders</TabsTrigger>
             <TabsTrigger value="food">
@@ -326,12 +369,12 @@ export default function OrderHistory() {
           {getFilterOptions().map((status) => (
             <Button
               key={status}
-              variant={filter === status ? 'default' : 'outline'}
+              variant={filter === status ? "default" : "outline"}
               size="sm"
               onClick={() => setFilter(status)}
               className="capitalize"
             >
-              {status === 'all' ? 'All Status' : status.replace(/-/g, ' ')}
+              {status === "all" ? "All Status" : status.replace(/-/g, " ")}
             </Button>
           ))}
         </div>
@@ -348,7 +391,9 @@ export default function OrderHistory() {
             <CardContent>
               <ShoppingBag className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">No orders yet</h3>
-              <p className="text-muted-foreground">Your order history will appear here</p>
+              <p className="text-muted-foreground">
+                Your order history will appear here
+              </p>
             </CardContent>
           </Card>
         )}
@@ -361,7 +406,9 @@ export default function OrderHistory() {
                 <Store className="h-5 w-5" />
                 Restaurant Orders
               </CardTitle>
-              <CardDescription>Your food orders from restaurants</CardDescription>
+              <CardDescription>
+                Your food orders from restaurants
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="rounded-md border overflow-x-auto">
@@ -386,108 +433,159 @@ export default function OrderHistory() {
                           #{order._id.slice(-8).toUpperCase()}
                         </TableCell>
                         <TableCell>
-                          <div className="font-medium">{order.restaurantId?.name || 'Unknown'}</div>
+                          <div className="font-medium">
+                            {order.restaurantId?.name || "Unknown"}
+                          </div>
                           {order.isCustomRecipe && (
-                            <Badge className="bg-orange-500 mt-1">Custom Recipe</Badge>
+                            <Badge className="bg-orange-500 mt-1">
+                              Custom Recipe
+                            </Badge>
                           )}
                         </TableCell>
                         <TableCell>
                           <Dialog>
                             <DialogTrigger asChild>
-                              <Button variant="outline" size="sm" className="gap-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-1"
+                              >
                                 <Eye className="h-4 w-4" />
                                 View Items
                               </Button>
                             </DialogTrigger>
                             <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                               <DialogHeader>
-                                <DialogTitle>Order Items - #{order._id.slice(-8).toUpperCase()}</DialogTitle>
+                                <DialogTitle>
+                                  Order Items - #
+                                  {order._id.slice(-8).toUpperCase()}
+                                </DialogTitle>
                               </DialogHeader>
                               <div className="space-y-4">
                                 {order.isCustomRecipe && order.recipeDetails ? (
                                   // Custom Recipe Display
                                   <div className="space-y-3 p-4 bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-lg">
                                     <div className="flex items-center gap-2">
-                                      <Badge className="bg-orange-500">Custom Recipe</Badge>
-                                      <Badge variant="secondary">{order.recipeDetails.mealType}</Badge>
+                                      <Badge className="bg-orange-500">
+                                        Custom Recipe
+                                      </Badge>
+                                      <Badge variant="secondary">
+                                        {order.recipeDetails.mealType}
+                                      </Badge>
                                     </div>
 
                                     <div>
-                                      <h4 className="font-semibold text-lg">{order.recipeDetails.recipeName}</h4>
-                                      <p className="text-sm text-muted-foreground">{order.recipeDetails.description}</p>
+                                      <h4 className="font-semibold text-lg">
+                                        {order.recipeDetails.recipeName}
+                                      </h4>
+                                      <p className="text-sm text-muted-foreground">
+                                        {order.recipeDetails.description}
+                                      </p>
                                     </div>
 
                                     <div className="grid grid-cols-4 gap-2 p-2 bg-white rounded">
                                       <div className="text-center">
-                                        <p className="text-xs text-muted-foreground">Calories</p>
-                                        <p className="font-semibold">{order.recipeDetails.calories}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                          Calories
+                                        </p>
+                                        <p className="font-semibold">
+                                          {order.recipeDetails.calories}
+                                        </p>
                                       </div>
                                       <div className="text-center">
-                                        <p className="text-xs text-muted-foreground">Protein</p>
-                                        <p className="font-semibold">{order.recipeDetails.macros.protein}g</p>
+                                        <p className="text-xs text-muted-foreground">
+                                          Protein
+                                        </p>
+                                        <p className="font-semibold">
+                                          {order.recipeDetails.macros.protein}g
+                                        </p>
                                       </div>
                                       <div className="text-center">
-                                        <p className="text-xs text-muted-foreground">Carbs</p>
-                                        <p className="font-semibold">{order.recipeDetails.macros.carbs}g</p>
+                                        <p className="text-xs text-muted-foreground">
+                                          Carbs
+                                        </p>
+                                        <p className="font-semibold">
+                                          {order.recipeDetails.macros.carbs}g
+                                        </p>
                                       </div>
                                       <div className="text-center">
-                                        <p className="text-xs text-muted-foreground">Fats</p>
-                                        <p className="font-semibold">{order.recipeDetails.macros.fats}g</p>
+                                        <p className="text-xs text-muted-foreground">
+                                          Fats
+                                        </p>
+                                        <p className="font-semibold">
+                                          {order.recipeDetails.macros.fats}g
+                                        </p>
                                       </div>
                                     </div>
 
                                     {/* Quote Status */}
-                                    {order.customPriceStatus === 'pending-quote' && (
+                                    {order.customPriceStatus ===
+                                      "pending-quote" && (
                                       <div className="p-3 bg-blue-50 border border-blue-200 rounded">
                                         <p className="text-sm font-medium text-blue-900 flex items-center gap-2">
                                           <Clock className="w-4 h-4" />
-                                          Waiting for restaurant to quote a price...
+                                          Waiting for restaurant to quote a
+                                          price...
                                         </p>
                                       </div>
                                     )}
 
-                                    {order.customPriceStatus === 'quoted' && order.quotedPrice && (
-                                      <div className="space-y-3 p-3 bg-green-50 border border-green-300 rounded">
-                                        <div className="flex items-center justify-between">
-                                          <div>
-                                            <p className="text-sm font-medium">Price Quote Received!</p>
-                                            <p className="text-2xl font-bold text-green-700">
-                                              ${order.quotedPrice.toFixed(2)}
-                                            </p>
+                                    {order.customPriceStatus === "quoted" &&
+                                      order.quotedPrice && (
+                                        <div className="space-y-3 p-3 bg-green-50 border border-green-300 rounded">
+                                          <div className="flex items-center justify-between">
+                                            <div>
+                                              <p className="text-sm font-medium">
+                                                Price Quote Received!
+                                              </p>
+                                              <p className="text-2xl font-bold text-green-700">
+                                                ${order.quotedPrice.toFixed(2)}
+                                              </p>
+                                            </div>
+                                          </div>
+                                          <p className="text-sm text-muted-foreground">
+                                            The restaurant has quoted this price
+                                            for your custom recipe. Would you
+                                            like to proceed?
+                                          </p>
+                                          <div className="flex gap-2">
+                                            <Button
+                                              onClick={() =>
+                                                handleAcceptQuote(
+                                                  order._id,
+                                                  order.quotedPrice!
+                                                )
+                                              }
+                                              className="flex-1"
+                                              size="sm"
+                                            >
+                                              Accept & Place Order
+                                            </Button>
+                                            <Button
+                                              onClick={() =>
+                                                handleRejectQuote(order._id)
+                                              }
+                                              variant="outline"
+                                              className="flex-1"
+                                              size="sm"
+                                            >
+                                              Reject Quote
+                                            </Button>
                                           </div>
                                         </div>
-                                        <p className="text-sm text-muted-foreground">
-                                          The restaurant has quoted this price for your custom recipe. Would you like to proceed?
-                                        </p>
-                                        <div className="flex gap-2">
-                                          <Button
-                                            onClick={() => handleAcceptQuote(order._id, order.quotedPrice!)}
-                                            className="flex-1"
-                                            size="sm"
-                                          >
-                                            Accept & Place Order
-                                          </Button>
-                                          <Button
-                                            onClick={() => handleRejectQuote(order._id)}
-                                            variant="outline"
-                                            className="flex-1"
-                                            size="sm"
-                                          >
-                                            Reject Quote
-                                          </Button>
+                                      )}
+
+                                    {order.customPriceStatus === "accepted" &&
+                                      order.quotedPrice && (
+                                        <div className="p-3 bg-green-100 border border-green-300 rounded">
+                                          <p className="text-sm font-semibold text-green-800">
+                                            Quote Accepted - Order Placed at $
+                                            {order.quotedPrice.toFixed(2)}
+                                          </p>
                                         </div>
-                                      </div>
-                                    )}
+                                      )}
 
-                                    {order.customPriceStatus === 'accepted' && order.quotedPrice && (
-                                      <div className="p-3 bg-green-100 border border-green-300 rounded">
-                                        <p className="text-sm font-semibold text-green-800">
-                                          Quote Accepted - Order Placed at ${order.quotedPrice.toFixed(2)}
-                                        </p>
-                                      </div>
-                                    )}
-
-                                    {order.customPriceStatus === 'rejected' && (
+                                    {order.customPriceStatus === "rejected" && (
                                       <div className="p-3 bg-red-50 border border-red-200 rounded">
                                         <p className="text-sm font-medium text-red-800">
                                           Quote Rejected - Order Cancelled
@@ -499,21 +597,36 @@ export default function OrderHistory() {
                                   // Regular Order Items
                                   <div className="space-y-2">
                                     {order.items.map((item, idx) => (
-                                      <div key={idx} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                                      <div
+                                        key={idx}
+                                        className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                                      >
                                         <div className="flex items-center gap-3">
                                           {item.dietFoodId?.image && (
                                             <img
                                               src={item.dietFoodId.image}
-                                              alt={item.dietFoodId?.name || item.name || 'Food item'}
+                                              alt={
+                                                item.dietFoodId?.name ||
+                                                item.name ||
+                                                "Food item"
+                                              }
                                               className="w-12 h-12 object-cover rounded"
                                             />
                                           )}
                                           <div>
-                                            <p className="font-medium">{item.dietFoodId?.name || item.name || 'Unknown Item'}</p>
-                                            <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                                            <p className="font-medium">
+                                              {item.dietFoodId?.name ||
+                                                item.name ||
+                                                "Unknown Item"}
+                                            </p>
+                                            <p className="text-sm text-muted-foreground">
+                                              Qty: {item.quantity}
+                                            </p>
                                           </div>
                                         </div>
-                                        <p className="font-semibold">${item.subtotal.toFixed(2)}</p>
+                                        <p className="font-semibold">
+                                          ${item.subtotal.toFixed(2)}
+                                        </p>
                                       </div>
                                     ))}
                                   </div>
@@ -524,23 +637,36 @@ export default function OrderHistory() {
                                   {order.deliveryDate && (
                                     <div className="flex items-center gap-2 text-sm">
                                       <Calendar className="h-4 w-4 text-muted-foreground" />
-                                      <span className="font-medium">Delivery Date:</span>
+                                      <span className="font-medium">
+                                        Delivery Date:
+                                      </span>
                                       <span className="text-muted-foreground">
-                                        {format(new Date(order.deliveryDate), 'MMM dd, yyyy')}
+                                        {format(
+                                          new Date(order.deliveryDate),
+                                          "MMM dd, yyyy"
+                                        )}
                                       </span>
                                     </div>
                                   )}
                                   {order.paymentMethod && (
                                     <div className="flex items-center gap-2 text-sm">
                                       <DollarSign className="h-4 w-4 text-muted-foreground" />
-                                      <span className="font-medium">Payment Method:</span>
-                                      <span className="text-muted-foreground capitalize">{order.paymentMethod}</span>
+                                      <span className="font-medium">
+                                        Payment Method:
+                                      </span>
+                                      <span className="text-muted-foreground capitalize">
+                                        {order.paymentMethod}
+                                      </span>
                                     </div>
                                   )}
                                   {order.notes && (
                                     <div className="text-sm">
-                                      <p className="font-medium mb-1">Special Instructions:</p>
-                                      <p className="text-muted-foreground">{order.notes}</p>
+                                      <p className="font-medium mb-1">
+                                        Special Instructions:
+                                      </p>
+                                      <p className="text-muted-foreground">
+                                        {order.notes}
+                                      </p>
                                     </div>
                                   )}
                                 </div>
@@ -550,7 +676,10 @@ export default function OrderHistory() {
                         </TableCell>
                         <TableCell>
                           <div className="text-sm max-w-[200px]">
-                            {order.deliveryAddress.street}, {order.deliveryAddress.city}, {order.deliveryAddress.state} {order.deliveryAddress.zipCode}
+                            {order.deliveryAddress.street},{" "}
+                            {order.deliveryAddress.city},{" "}
+                            {order.deliveryAddress.state}{" "}
+                            {order.deliveryAddress.zipCode}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -560,19 +689,24 @@ export default function OrderHistory() {
                         </TableCell>
                         <TableCell>
                           <Badge className={getStatusColor(order.status)}>
-                            {order.status.replace('-', ' ')}
+                            {order.status.replace("-", " ")}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge className={getPaymentStatusColor(order.paymentStatus)}>
+                          <Badge
+                            className={getPaymentStatusColor(
+                              order.paymentStatus
+                            )}
+                          >
                             {order.paymentStatus}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm">
-                          {format(new Date(order.createdAt), 'MMM dd, yyyy')}
+                          {format(new Date(order.createdAt), "MMM dd, yyyy")}
                         </TableCell>
                         <TableCell>
-                          {(order.status === 'pending' || order.status === 'confirmed') && (
+                          {(order.status === "pending" ||
+                            order.status === "confirmed") && (
                             <Button
                               variant="destructive"
                               size="sm"
@@ -599,7 +733,9 @@ export default function OrderHistory() {
                 <ShoppingCart className="h-5 w-5" />
                 Shopping List Deliveries
               </CardTitle>
-              <CardDescription>Your shopping list delivery requests</CardDescription>
+              <CardDescription>
+                Your shopping list delivery requests
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="rounded-md border overflow-x-auto">
@@ -624,14 +760,21 @@ export default function OrderHistory() {
                         <TableCell>
                           <Dialog>
                             <DialogTrigger asChild>
-                              <Button variant="outline" size="sm" className="gap-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-1"
+                              >
                                 <ShoppingCart className="h-4 w-4" />
                                 {request.items.length} items
                               </Button>
                             </DialogTrigger>
                             <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                               <DialogHeader>
-                                <DialogTitle>Shopping List - #{request._id.slice(-8).toUpperCase()}</DialogTitle>
+                                <DialogTitle>
+                                  Shopping List - #
+                                  {request._id.slice(-8).toUpperCase()}
+                                </DialogTitle>
                               </DialogHeader>
                               <div className="space-y-4">
                                 <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -640,9 +783,16 @@ export default function OrderHistory() {
                                     Shopping List ({request.items.length} items)
                                   </h4>
                                   <ul className="grid grid-cols-2 gap-1 text-sm">
-                                    {request.items.map((item: string, idx: number) => (
-                                      <li key={idx} className="text-muted-foreground">• {item}</li>
-                                    ))}
+                                    {request.items.map(
+                                      (item: string, idx: number) => (
+                                        <li
+                                          key={idx}
+                                          className="text-muted-foreground"
+                                        >
+                                          • {item}
+                                        </li>
+                                      )
+                                    )}
                                   </ul>
                                 </div>
 
@@ -652,9 +802,15 @@ export default function OrderHistory() {
                                     <div className="flex items-start gap-2">
                                       <User className="w-4 h-4 mt-0.5 text-green-700" />
                                       <div className="text-sm">
-                                        <p className="font-semibold text-green-900">Delivery Partner:</p>
-                                        <p className="text-green-800">{request.deliveryPartnerId.fullName}</p>
-                                        <p className="text-green-700 text-xs">{request.deliveryPartnerId.phone}</p>
+                                        <p className="font-semibold text-green-900">
+                                          Delivery Partner:
+                                        </p>
+                                        <p className="text-green-800">
+                                          {request.deliveryPartnerId.fullName}
+                                        </p>
+                                        <p className="text-green-700 text-xs">
+                                          {request.deliveryPartnerId.phone}
+                                        </p>
                                       </div>
                                     </div>
                                   </div>
@@ -663,10 +819,19 @@ export default function OrderHistory() {
                                 {/* Cost Breakdown if available */}
                                 {request.finalCost && (
                                   <div className="space-y-1 p-3 bg-white border border-gray-200 rounded">
-                                    <p className="text-sm">Grocery Cost: ${request.finalCost.toFixed(2)}</p>
-                                    <p className="text-sm">Delivery Fee: ${request.deliveryFee.toFixed(2)}</p>
+                                    <p className="text-sm">
+                                      Grocery Cost: $
+                                      {request.finalCost.toFixed(2)}
+                                    </p>
+                                    <p className="text-sm">
+                                      Delivery Fee: $
+                                      {request.deliveryFee.toFixed(2)}
+                                    </p>
                                     <p className="font-bold border-t border-gray-300 pt-1 mt-1">
-                                      Total: ${(request.finalCost + request.deliveryFee).toFixed(2)}
+                                      Total: $
+                                      {(
+                                        request.finalCost + request.deliveryFee
+                                      ).toFixed(2)}
                                     </p>
                                   </div>
                                 )}
@@ -674,24 +839,52 @@ export default function OrderHistory() {
                                 {/* Special Notes */}
                                 {request.notes && (
                                   <div className="pt-2 border-t">
-                                    <p className="text-sm font-medium mb-1">Special Instructions:</p>
-                                    <p className="text-sm text-muted-foreground">{request.notes}</p>
+                                    <p className="text-sm font-medium mb-1">
+                                      Special Instructions:
+                                    </p>
+                                    <p className="text-sm text-muted-foreground">
+                                      {request.notes}
+                                    </p>
                                   </div>
                                 )}
 
                                 {/* Timestamps */}
                                 <div className="pt-2 border-t text-xs text-muted-foreground space-y-1">
                                   {request.acceptedAt && (
-                                    <p>Accepted: {format(new Date(request.acceptedAt), 'MMM dd, yyyy HH:mm')}</p>
+                                    <p>
+                                      Accepted:{" "}
+                                      {format(
+                                        new Date(request.acceptedAt),
+                                        "MMM dd, yyyy HH:mm"
+                                      )}
+                                    </p>
                                   )}
                                   {request.deliveredAt && (
-                                    <p>Delivered: {format(new Date(request.deliveredAt), 'MMM dd, yyyy HH:mm')}</p>
+                                    <p>
+                                      Delivered:{" "}
+                                      {format(
+                                        new Date(request.deliveredAt),
+                                        "MMM dd, yyyy HH:mm"
+                                      )}
+                                    </p>
                                   )}
                                   {request.deliveryConfirmedAt && (
-                                    <p>Confirmed: {format(new Date(request.deliveryConfirmedAt), 'MMM dd, yyyy HH:mm')}</p>
+                                    <p>
+                                      Confirmed:{" "}
+                                      {format(
+                                        new Date(request.deliveryConfirmedAt),
+                                        "MMM dd, yyyy HH:mm"
+                                      )}
+                                    </p>
                                   )}
                                   {request.disputedAt && (
-                                    <p>Disputed: {format(new Date(request.disputedAt), 'MMM dd, yyyy HH:mm')}</p>
+                                    <p>
+                                      Disputed:{" "}
+                                      {format(
+                                        new Date(request.disputedAt),
+                                        "MMM dd, yyyy HH:mm"
+                                      )}
+                                    </p>
                                   )}
                                 </div>
                               </div>
@@ -700,7 +893,10 @@ export default function OrderHistory() {
                         </TableCell>
                         <TableCell>
                           <div className="text-sm max-w-[200px]">
-                            {request.deliveryAddress.street}, {request.deliveryAddress.city}, {request.deliveryAddress.state} {request.deliveryAddress.zipCode}
+                            {request.deliveryAddress.street},{" "}
+                            {request.deliveryAddress.city},{" "}
+                            {request.deliveryAddress.state}{" "}
+                            {request.deliveryAddress.zipCode}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -715,134 +911,184 @@ export default function OrderHistory() {
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">
-                            <Badge className={getStatusColor(getShoppingListDisplayStatus(request))}>
+                            <Badge
+                              className={getStatusColor(
+                                getShoppingListDisplayStatus(request)
+                              )}
+                            >
                               {getShoppingListDisplayStatus(request)}
                             </Badge>
                             {/* Status-specific messages */}
-                            {(request.status === 'delivered' || request.status === 'confirmed') && !request.deliveryConfirmed && (
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button variant="link" size="sm" className="h-auto p-0 text-xs text-orange-600">
-                                    Action Required
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader>
-                                    <DialogTitle>Delivery Confirmation Required</DialogTitle>
-                                  </DialogHeader>
-                                  <div className="space-y-4">
-                                    <div className="p-4 bg-orange-50 border-2 border-orange-300 rounded-lg space-y-3">
-                                      <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-orange-200 rounded-full flex items-center justify-center text-xl">
-                                          📦
+                            {(request.status === "delivered" ||
+                              request.status === "confirmed") &&
+                              !request.deliveryConfirmed && (
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button
+                                      variant="link"
+                                      size="sm"
+                                      className="h-auto p-0 text-xs text-orange-600"
+                                    >
+                                      Action Required
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent>
+                                    <DialogHeader>
+                                      <DialogTitle>
+                                        Delivery Confirmation Required
+                                      </DialogTitle>
+                                    </DialogHeader>
+                                    <div className="space-y-4">
+                                      <div className="p-4 bg-orange-50 border-2 border-orange-300 rounded-lg space-y-3">
+                                        <div className="flex items-center gap-3">
+                                          <div className="w-10 h-10 bg-orange-200 rounded-full flex items-center justify-center text-xl"></div>
+                                          <div>
+                                            <p className="font-bold text-orange-900">
+                                              Delivery Partner Marked as
+                                              Delivered
+                                            </p>
+                                            <p className="text-sm text-orange-800">
+                                              Please confirm if you received
+                                              your items
+                                            </p>
+                                          </div>
                                         </div>
+
+                                        {request.finalCost && (
+                                          <div className="space-y-1 p-3 bg-white border border-orange-200 rounded">
+                                            <p className="text-sm">
+                                              Grocery Cost: $
+                                              {request.finalCost.toFixed(2)}
+                                            </p>
+                                            <p className="text-sm">
+                                              Delivery Fee: $
+                                              {request.deliveryFee.toFixed(2)}
+                                            </p>
+                                            <p className="font-bold border-t border-orange-300 pt-1 mt-1">
+                                              Total: $
+                                              {(
+                                                request.finalCost +
+                                                request.deliveryFee
+                                              ).toFixed(2)}
+                                            </p>
+                                          </div>
+                                        )}
+
+                                        <div className="flex gap-3 pt-2">
+                                          <Button
+                                            onClick={() => {
+                                              handleConfirmDelivery(
+                                                request._id
+                                              );
+                                            }}
+                                            className="flex-1 bg-green-600 hover:bg-green-700"
+                                            size="sm"
+                                          >
+                                            Yes, I Received It
+                                          </Button>
+                                          <Button
+                                            onClick={() => {
+                                              handleDisputeDelivery(
+                                                request._id
+                                              );
+                                            }}
+                                            variant="destructive"
+                                            className="flex-1"
+                                            size="sm"
+                                          >
+                                            Report Issue
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </DialogContent>
+                                </Dialog>
+                              )}
+                            {(request.status === "delivered" ||
+                              request.status === "confirmed") &&
+                              request.deliveryConfirmed && (
+                                <div className="text-xs text-green-700">
+                                  Payment confirmed
+                                </div>
+                              )}
+                            {request.status === "disputed" &&
+                              request.disputeReason && (
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button
+                                      variant="link"
+                                      size="sm"
+                                      className="h-auto p-0 text-xs text-red-600"
+                                    >
+                                      View Dispute
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent>
+                                    <DialogHeader>
+                                      <DialogTitle>Dispute Details</DialogTitle>
+                                    </DialogHeader>
+                                    <div className="p-4 bg-red-50 border-2 border-red-400 rounded-lg">
+                                      <div className="flex items-center gap-3 mb-3">
+                                        <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-xl"></div>
                                         <div>
-                                          <p className="font-bold text-orange-900">Delivery Partner Marked as Delivered</p>
-                                          <p className="text-sm text-orange-800">
-                                            Please confirm if you received your items
+                                          <p className="font-bold text-red-900">
+                                            Delivery Disputed
+                                          </p>
+                                          <p className="text-sm text-red-800">
+                                            Issue reported - Under investigation
                                           </p>
                                         </div>
                                       </div>
-
-                                      {request.finalCost && (
-                                        <div className="space-y-1 p-3 bg-white border border-orange-200 rounded">
-                                          <p className="text-sm">Grocery Cost: ${request.finalCost.toFixed(2)}</p>
-                                          <p className="text-sm">Delivery Fee: ${request.deliveryFee.toFixed(2)}</p>
-                                          <p className="font-bold border-t border-orange-300 pt-1 mt-1">
-                                            Total: ${(request.finalCost + request.deliveryFee).toFixed(2)}
-                                          </p>
-                                        </div>
-                                      )}
-
-                                      <div className="flex gap-3 pt-2">
-                                        <Button
-                                          onClick={() => {
-                                            handleConfirmDelivery(request._id);
-                                          }}
-                                          className="flex-1 bg-green-600 hover:bg-green-700"
-                                          size="sm"
-                                        >
-                                          Yes, I Received It
-                                        </Button>
-                                        <Button
-                                          onClick={() => {
-                                            handleDisputeDelivery(request._id);
-                                          }}
-                                          variant="destructive"
-                                          className="flex-1"
-                                          size="sm"
-                                        >
-                                          Report Issue
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
-                            )}
-                            {(request.status === 'delivered' || request.status === 'confirmed') && request.deliveryConfirmed && (
-                              <div className="text-xs text-green-700">Payment confirmed</div>
-                            )}
-                            {request.status === 'disputed' && request.disputeReason && (
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button variant="link" size="sm" className="h-auto p-0 text-xs text-red-600">
-                                    View Dispute
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader>
-                                    <DialogTitle>Dispute Details</DialogTitle>
-                                  </DialogHeader>
-                                  <div className="p-4 bg-red-50 border-2 border-red-400 rounded-lg">
-                                    <div className="flex items-center gap-3 mb-3">
-                                      <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-xl">
-                                        ⚠️
-                                      </div>
-                                      <div>
-                                        <p className="font-bold text-red-900">Delivery Disputed</p>
+                                      <div className="p-3 bg-white border border-red-300 rounded">
+                                        <p className="text-xs font-semibold text-red-900 mb-1">
+                                          Your Report:
+                                        </p>
                                         <p className="text-sm text-red-800">
-                                          Issue reported - Under investigation
+                                          {request.disputeReason}
                                         </p>
+                                        {request.disputedAt && (
+                                          <p className="text-xs text-red-700 mt-2">
+                                            Reported on{" "}
+                                            {format(
+                                              new Date(request.disputedAt),
+                                              "MMM dd, yyyy 'at' HH:mm"
+                                            )}
+                                          </p>
+                                        )}
                                       </div>
                                     </div>
-                                    <div className="p-3 bg-white border border-red-300 rounded">
-                                      <p className="text-xs font-semibold text-red-900 mb-1">Your Report:</p>
-                                      <p className="text-sm text-red-800">{request.disputeReason}</p>
-                                      {request.disputedAt && (
-                                        <p className="text-xs text-red-700 mt-2">
-                                          Reported on {format(new Date(request.disputedAt), 'MMM dd, yyyy \'at\' HH:mm')}
-                                        </p>
-                                      )}
-                                    </div>
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
-                            )}
+                                  </DialogContent>
+                                </Dialog>
+                              )}
                           </div>
                         </TableCell>
                         <TableCell className="text-sm">
-                          {format(new Date(request.createdAt), 'MMM dd, yyyy')}
+                          {format(new Date(request.createdAt), "MMM dd, yyyy")}
                         </TableCell>
                         <TableCell>
-                          {request.status === 'delivered' && !request.deliveryConfirmed && (
-                            <div className="flex gap-2">
-                              <Button
-                                onClick={() => handleConfirmDelivery(request._id)}
-                                size="sm"
-                                className="bg-green-600 hover:bg-green-700"
-                              >
-                                Confirm
-                              </Button>
-                              <Button
-                                onClick={() => handleDisputeDelivery(request._id)}
-                                variant="destructive"
-                                size="sm"
-                              >
-                                Dispute
-                              </Button>
-                            </div>
-                          )}
+                          {request.status === "delivered" &&
+                            !request.deliveryConfirmed && (
+                              <div className="flex gap-2">
+                                <Button
+                                  onClick={() =>
+                                    handleConfirmDelivery(request._id)
+                                  }
+                                  size="sm"
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  Confirm
+                                </Button>
+                                <Button
+                                  onClick={() =>
+                                    handleDisputeDelivery(request._id)
+                                  }
+                                  variant="destructive"
+                                  size="sm"
+                                >
+                                  Dispute
+                                </Button>
+                              </div>
+                            )}
                         </TableCell>
                       </TableRow>
                     ))}

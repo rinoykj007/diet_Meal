@@ -58,7 +58,7 @@ const shoppingListRequestSchema = new mongoose.Schema({
     disputedAt: Date,
     deliveryFee: {
         type: Number,
-        default: 10.00  // Fixed delivery fee
+        default: 10.00  
     },
     estimatedCost: {
         type: Number,

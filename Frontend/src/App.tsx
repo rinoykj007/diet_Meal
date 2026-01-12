@@ -12,6 +12,7 @@ import NotFound from "./pages/NotFound";
 import Plans from "./pages/public/Plans";
 import Services from "./pages/public/Services";
 import Contact from "./pages/public/Contact";
+import TermsAndConditions from "./pages/public/TermsAndConditions";
 
 // Auth Pages
 import RoleSelection from "./pages/auth/RoleSelection";
@@ -69,6 +70,7 @@ const App = () => (
             <Route path="/plans" element={<Plans />} />
             <Route path="/services" element={<Services />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
 
             {/* Auth Routes */}
             <Route path="/select-role" element={<RoleSelection />} />

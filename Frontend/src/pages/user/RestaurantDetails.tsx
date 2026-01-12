@@ -222,7 +222,7 @@ const RestaurantDetails = () => {
     if (totalCalories > mealBudget.max) {
       return {
         status: 'over',
-        message: `⚠️ Over budget! ${totalCalories} cal exceeds your ${selectedMealType} max (${mealBudget.max} cal)`,
+        message: `Over budget! ${totalCalories} cal exceeds your ${selectedMealType} max (${mealBudget.max} cal)`,
         color: 'bg-red-50 border-red-300 text-red-800',
         percentage
       };

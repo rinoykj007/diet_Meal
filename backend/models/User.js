@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
   googleId: {
     type: String,
     unique: true,
-    sparse: true // Allows null values to not be unique
+    sparse: true 
   },
   roles: [{
     type: String,

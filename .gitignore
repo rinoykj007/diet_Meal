@@ -61,9 +61,7 @@ pnpm-lock.yaml
 backend/scripts/seedData.js
 seedData.js
 
-# Google OAuth credentials (NEVER commit these!)
+# Google OAuth credentials 
 **/client_secret*.json
 client_secret*.json
 
-# doc
-..z_doc/

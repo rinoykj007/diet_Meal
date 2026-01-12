@@ -4,7 +4,7 @@ const orderItemSchema = new mongoose.Schema({
   dietFoodId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'DietFood',
-    required: false  // Not required for custom recipe orders
+    required: false 
   },
   name: String,
   quantity: {

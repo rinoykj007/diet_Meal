@@ -81,14 +81,20 @@ export default function UserDashboard() {
       const activeAIPlans = aiResponse.data.data?.length || 0;
 
       // Fetch orders this month
-      const ordersResponse = await orderAPI.getMyOrders({ orderType: 'diet-food' });
+      const ordersResponse = await orderAPI.getMyOrders({
+        orderType: "diet-food",
+      });
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
 
-      const ordersThisMonth = ordersResponse.data.data?.filter((order: any) => {
-        const orderDate = new Date(order.createdAt);
-        return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
-      }).length || 0;
+      const ordersThisMonth =
+        ordersResponse.data.data?.filter((order: any) => {
+          const orderDate = new Date(order.createdAt);
+          return (
+            orderDate.getMonth() === currentMonth &&
+            orderDate.getFullYear() === currentYear
+          );
+        }).length || 0;
 
       setStats({
         activePlans: activeAIPlans,
@@ -179,7 +185,7 @@ export default function UserDashboard() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-heading font-bold">
-              Welcome back, {user?.fullName || "there"}! 👋
+              Welcome back, {user?.fullName || "there"}! 
             </h1>
             <p className="text-muted-foreground mt-1">
               Here's what's happening with your nutrition journey
@@ -187,7 +193,7 @@ export default function UserDashboard() {
           </div>
           <Link to="/ai-diet">
             <Button>
-              Get AI Recommendations
+              Get Diet Recipe Recommendations
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </Link>

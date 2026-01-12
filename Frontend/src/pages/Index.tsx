@@ -103,7 +103,7 @@ const HeroImage = () => {
       <img
         src={heroSalad}
         alt="Fresh healthy salad bowl with colorful vegetables"
-        className="w-full h-auto object-cover aspect-[16/10]"
+        className="w-full h-auto object-cover aspect-[16/4.5]"
       />
 
       {/* Floating Badge - Nutrition Analysis */}

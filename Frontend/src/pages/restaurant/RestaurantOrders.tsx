@@ -286,13 +286,13 @@ export default function RestaurantOrders() {
                                                             </div>
 
                                                             <div className="text-sm text-muted-foreground space-y-1">
-                                                                <div>📧 {order.userId.email}</div>
-                                                                {order.userId.phone && <div>📞 {order.userId.phone}</div>}
+                                                                <div>{order.userId.email}</div>
+                                                                {order.userId.phone && <div>{order.userId.phone}</div>}
                                                                 <div>
-                                                                    📍 {order.deliveryAddress.street}, {order.deliveryAddress.city},{' '}
+                                                                 {order.deliveryAddress.street}, {order.deliveryAddress.city},{' '}
                                                                     {order.deliveryAddress.state} {order.deliveryAddress.zipCode}
                                                                 </div>
-                                                                {order.notes && <div>📝 Note: {order.notes}</div>}
+                                                                {order.notes && <div> Note: {order.notes}</div>}
                                                             </div>
 
                                                             {/* Order Items or Custom Recipe Details */}
@@ -389,7 +389,7 @@ export default function RestaurantOrders() {
                                                                     {order.customPriceStatus === 'quoted' && (
                                                                         <div className="p-2 bg-blue-50 border border-blue-200 rounded">
                                                                             <p className="text-sm">
-                                                                                💰 Quoted: <span className="font-bold">${order.quotedPrice?.toFixed(2)}</span>
+                                                                                 Quoted: <span className="font-bold">${order.quotedPrice?.toFixed(2)}</span>
                                                                                 {' '}- Waiting for customer response
                                                                             </p>
                                                                         </div>
@@ -398,7 +398,7 @@ export default function RestaurantOrders() {
                                                                     {order.customPriceStatus === 'accepted' && order.quotedPrice && (
                                                                         <div className="p-2 bg-green-50 border border-green-200 rounded">
                                                                             <p className="text-sm font-semibold text-green-800">
-                                                                                ✅ Price Accepted: ${order.quotedPrice.toFixed(2)}
+                                                                                Price Accepted: ${order.quotedPrice.toFixed(2)}
                                                                             </p>
                                                                         </div>
                                                                     )}

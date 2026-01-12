@@ -1,16 +1,5 @@
 # Exact Meal Design - Backend API
 
-MongoDB + Express + Node.js backend for the Exact Meal Design application.
-
-## Features
-
-- User authentication with JWT
-- Role-based access control (User, Provider, Admin)
-- RESTful API endpoints
-- MongoDB database with Mongoose ODM
-- Secure password hashing with bcrypt
-- Error handling middleware
-
 ## Prerequisites
 
 - Node.js (v14 or higher)
@@ -74,61 +63,7 @@ The server will start on `http://localhost:5000`
 - `PUT /api/diet-plans/:id` - Update diet plan (Protected)
 - `DELETE /api/diet-plans/:id` - Delete diet plan (Protected)
 
-### Health Check
-- `GET /health` - Server health check
 
-## Database Models
 
-- **User** - User accounts with authentication
-- **Provider** - Hotel/meal provider profiles
-- **DietPlan** - Diet plans offered by providers
-- **Meal** - Individual meals in diet plans
-- **Subscription** - User subscriptions to diet plans
-- **Order** - Meal orders
-- **Notification** - User notifications
-- **ProviderAvailability** - Provider unavailable dates
-- **AIDietPreference** - User dietary preferences for AI recommendations
 
-## Security
 
-- Passwords are hashed using bcrypt
-- JWT tokens for authentication
-- Role-based access control
-- MongoDB injection protection
-- CORS enabled
-
-## Project Structure
-
-```
-backend/
-├── config/
-│   └── database.js
-├── controllers/
-│   ├── authController.js
-│   ├── providerController.js
-│   └── dietPlanController.js
-├── middleware/
-│   ├── auth.js
-│   └── errorHandler.js
-├── models/
-│   ├── User.js
-│   ├── Provider.js
-│   ├── DietPlan.js
-│   ├── Meal.js
-│   ├── Subscription.js
-│   ├── Order.js
-│   ├── Notification.js
-│   ├── ProviderAvailability.js
-│   └── AIDietPreference.js
-├── routes/
-│   ├── authRoutes.js
-│   ├── providerRoutes.js
-│   └── dietPlanRoutes.js
-├── utils/
-│   └── generateToken.js
-├── .env.example
-├── .gitignore
-├── package.json
-├── README.md
-└── server.js
-```
