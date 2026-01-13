@@ -96,9 +96,9 @@ export default function AIDiet() {
 
     // Calculate BMR using Mifflin-St Jeor Equation (more modern & accurate)
     if (gender === "male") {
-      bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
+      bmr = 10 * weight + 6.25 * height - 5 * age + 5;
     } else if (gender === "female") {
-      bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
+      bmr = 10 * weight + 6.25 * height - 5 * age - 161;
     }
 
     // Activity Factor multipliers
@@ -119,7 +119,10 @@ export default function AIDiet() {
     let dailyCalories = tdee;
     if (healthGoal === "Weight Loss") {
       dailyCalories = tdee - 500; // 🔻 Weight loss: TDEE - 500 kcal
-    } else if (healthGoal === "Weight Gain" || healthGoal === "Weight Gain (Muscle Gain)") {
+    } else if (
+      healthGoal === "Weight Gain" ||
+      healthGoal === "Weight Gain (Muscle Gain)"
+    ) {
       dailyCalories = tdee + 400; // 🔺 Weight gain: TDEE + 400 kcal (middle of 300-500 range)
     }
     // For "Weight Maintenance", dailyCalories remains as TDEE (±100 kcal is natural variance)
@@ -392,8 +395,12 @@ export default function AIDiet() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Weight Loss">Weight Loss</SelectItem>
-                        <SelectItem value="Weight Gain">Weight Gain (Muscle Gain)</SelectItem>
-                        <SelectItem value="Weight Maintenance">Weight Maintenance</SelectItem>
+                        <SelectItem value="Weight Gain">
+                          Weight Gain (Muscle Gain)
+                        </SelectItem>
+                        <SelectItem value="Weight Maintenance">
+                          Weight Maintenance
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">
@@ -466,14 +473,6 @@ export default function AIDiet() {
                         </div>
                       )}
                     </div>
-                    {calculateDailyCalories() && (
-                      <p className="text-xs text-green-600">
-                        ✓ Calculated: {calculateDailyCalories()} calories/day
-                        {formData.healthGoals === "Weight Loss" && " (TDEE - 500 kcal)"}
-                        {formData.healthGoals === "Weight Gain (Muscle Gain)" && " (TDEE + 400 kcal)"}
-                        {formData.healthGoals === "Weight Maintenance" && " (TDEE)"}
-                      </p>
-                    )}
                     {!calculateDailyCalories() && (
                       <p className="text-xs text-muted-foreground">
                         Fill in age, gender, height, and weight for
