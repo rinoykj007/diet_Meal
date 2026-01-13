@@ -370,15 +370,22 @@ export default function AIDiet() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="healthGoals">Health Goals *</Label>
-                    <Input
-                      id="healthGoals"
-                      placeholder="e.g., Weight loss, Muscle gain"
+                    <Select
                       value={formData.healthGoals}
-                      onChange={(e) =>
-                        handleInputChange("healthGoals", e.target.value)
+                      onValueChange={(value) =>
+                        handleInputChange("healthGoals", value)
                       }
                       required
-                    />
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your health goal" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Weight Loss">Weight Loss</SelectItem>
+                        <SelectItem value="Weight Gain">Weight Gain (Muscle Gain)</SelectItem>
+                        <SelectItem value="Weight Maintenance">Weight Maintenance</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <p className="text-xs text-muted-foreground">
                       Separate multiple goals with commas
                     </p>
