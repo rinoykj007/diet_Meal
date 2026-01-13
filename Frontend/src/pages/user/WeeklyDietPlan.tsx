@@ -214,7 +214,7 @@ export default function WeeklyDietPlan() {
             </Button>
             <h1 className="text-2xl md:text-3xl font-heading font-bold flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-primary" />
-              AI Personalized Plan
+              Diet Personalized Plan
             </h1>
             <p className="text-muted-foreground mt-1">
               {new Date(planData.createdAt).toLocaleDateString("en-US", {
@@ -423,13 +423,21 @@ export default function WeeklyDietPlan() {
             <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
               {(() => {
                 // Split all items by commas and remove duplicates
-                const allItems = recommendation.shoppingList.join(', ').split(',');
-                const uniqueItems = [...new Set(allItems.map(item => item.trim()).filter(item => item))];
+                const allItems = recommendation.shoppingList
+                  .join(", ")
+                  .split(",");
+                const uniqueItems = [
+                  ...new Set(
+                    allItems.map((item) => item.trim()).filter((item) => item)
+                  ),
+                ];
 
                 return uniqueItems.map((item, index) => (
                   <li key={index} className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
-                    <span className="text-sm text-muted-foreground">{item}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {item}
+                    </span>
                   </li>
                 ));
               })()}
