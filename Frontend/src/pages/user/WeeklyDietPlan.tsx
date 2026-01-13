@@ -424,7 +424,7 @@ export default function WeeklyDietPlan() {
               {(() => {
                 // Split all items by commas and remove duplicates
                 const allItems = recommendation.shoppingList.join(', ').split(',');
-                const uniqueItems = [...new Set(allItems.map(item => item.trim()))];
+                const uniqueItems = [...new Set(allItems.map(item => item.trim()).filter(item => item))];
 
                 return uniqueItems.map((item, index) => (
                   <li key={index} className="flex items-center gap-2">
