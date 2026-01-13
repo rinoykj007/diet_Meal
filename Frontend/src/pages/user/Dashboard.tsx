@@ -51,6 +51,7 @@ export default function UserDashboard() {
     ordersThisMonth: 0,
     caloriesTracked: 0,
   });
+  const [calorieGoal, setCalorieGoal] = useState(2000); // Default 2000, updated from diet plan
   const [todaysMeals, setTodaysMeals] = useState<TodayMeal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [latestRecommendationId, setLatestRecommendationId] = useState<
@@ -136,6 +137,15 @@ export default function UserDashboard() {
           const dayIndex = getCurrentDayIndex();
 
           const todayPlan = weeklyPlan[dayIndex];
+
+          // Calculate today's total calorie goal from meal plan
+          if (todayPlan && todayPlan.meals) {
+            const todayCalorieGoal = todayPlan.meals.reduce(
+              (sum: number, meal: Meal) => sum + (meal.calories || 0),
+              0
+            );
+            setCalorieGoal(todayCalorieGoal);
+          }
 
           if (todayPlan && todayPlan.meals) {
             // Map meals to display format with appropriate times
@@ -240,7 +250,7 @@ export default function UserDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.caloriesTracked}</div>
-              <p className="text-xs text-muted-foreground mt-1">of 2000 goal</p>
+              <p className="text-xs text-muted-foreground mt-1">of {calorieGoal} goal</p>
             </CardContent>
           </Card>
         </div>
