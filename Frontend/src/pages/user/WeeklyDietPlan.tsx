@@ -421,12 +421,18 @@ export default function WeeklyDietPlan() {
           </CardHeader>
           <CardContent>
             <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-              {recommendation.shoppingList.map((item, index) => (
-                <li key={index} className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
-                  <span className="text-sm text-muted-foreground">{item}</span>
-                </li>
-              ))}
+              {(() => {
+                // Split all items by commas and remove duplicates
+                const allItems = recommendation.shoppingList.join(', ').split(',');
+                const uniqueItems = [...new Set(allItems.map(item => item.trim()))];
+
+                return uniqueItems.map((item, index) => (
+                  <li key={index} className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
+                    <span className="text-sm text-muted-foreground">{item}</span>
+                  </li>
+                ));
+              })()}
             </ul>
 
             {/* Shopping Request Status & Button */}
