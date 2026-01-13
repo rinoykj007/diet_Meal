@@ -425,6 +425,15 @@ export const aiDietAPI = {
     weight?: number;
     calorieTarget?: number;
   }) => api.post('/ai-diet/preferences', preferences),
+
+  // Regenerate a specific meal
+  regenerateMeal: (data: {
+    planId: string;
+    dayIndex: number;
+    mealIndex: number;
+    mealType: string;
+    targetCalories: number;
+  }) => api.post('/ai-diet/regenerate-meal', data),
 };
 
 // Shopping List Request API

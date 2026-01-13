@@ -24,6 +24,7 @@ import {
   Clock,
   Package,
   Download,
+  RefreshCw,
 } from "lucide-react";
 import { pdf } from '@react-pdf/renderer';
 import { MealPlanPDF } from '@/components/MealPlanPDF';
@@ -84,6 +85,12 @@ export default function WeeklyDietPlan() {
   // Shopping Request Status State
   const [shoppingRequest, setShoppingRequest] = useState<any>(null);
   const [loadingRequest, setLoadingRequest] = useState(false);
+
+  // Regenerate Meal State
+  const [regeneratingMeal, setRegeneratingMeal] = useState<{
+    dayIndex: number;
+    mealIndex: number;
+  } | null>(null);
 
   useEffect(() => {
     fetchPlanDetails();
@@ -202,6 +209,43 @@ export default function WeeklyDietPlan() {
         description: "Failed to generate PDF. Please try again.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleRegenerateMeal = async (dayIndex: number, mealIndex: number, meal: Meal) => {
+    if (!planData || !id) return;
+
+    setRegeneratingMeal({ dayIndex, mealIndex });
+
+    try {
+      const response = await aiDietAPI.regenerateMeal({
+        planId: id,
+        dayIndex,
+        mealIndex,
+        mealType: meal.mealType,
+        targetCalories: meal.calories,
+      });
+
+      if (response.data.success) {
+        // Update the meal in the local state
+        const updatedPlanData = { ...planData };
+        updatedPlanData.recommendation.weeklyPlan[dayIndex].meals[mealIndex] = response.data.data.meal;
+        setPlanData(updatedPlanData);
+
+        toast({
+          title: "Success",
+          description: `${meal.mealType} has been regenerated!`,
+        });
+      }
+    } catch (error: any) {
+      console.error("Error regenerating meal:", error);
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to regenerate meal",
+        variant: "destructive",
+      });
+    } finally {
+      setRegeneratingMeal(null);
     }
   };
 
@@ -329,15 +373,33 @@ export default function WeeklyDietPlan() {
                     >
                       {/* Meal Header - Compact */}
                       <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-2 border-b">
-                        <div className="flex items-center gap-2">
-                          <ChefHat className="w-4 h-4 text-primary" />
-                          <span className="text-sm font-semibold text-primary">
-                            {meal.mealType}
-                          </span>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <ChefHat className="w-4 h-4 text-primary" />
+                              <span className="text-sm font-semibold text-primary">
+                                {meal.mealType}
+                              </span>
+                            </div>
+                            <h3 className="font-bold text-base mt-0.5">
+                              {meal.name}
+                            </h3>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => handleRegenerateMeal(selectedDay, index, meal)}
+                            title="Regenerate this meal"
+                            disabled={regeneratingMeal?.dayIndex === selectedDay && regeneratingMeal?.mealIndex === index}
+                          >
+                            {regeneratingMeal?.dayIndex === selectedDay && regeneratingMeal?.mealIndex === index ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <RefreshCw className="w-4 h-4" />
+                            )}
+                          </Button>
                         </div>
-                        <h3 className="font-bold text-base mt-0.5">
-                          {meal.name}
-                        </h3>
                       </div>
 
                       {/* Card Content - Grows to fill space */}

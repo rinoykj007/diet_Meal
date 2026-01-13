@@ -513,3 +513,98 @@ exports.getUserPreferences = async (req, res) => {
     });
   }
 };
+
+exports.regenerateMeal = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { planId, dayIndex, mealIndex, mealType, targetCalories } = req.body;
+
+    if (!planId || dayIndex === undefined || mealIndex === undefined || !mealType || !targetCalories) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // Find the diet plan
+    const dietPlan = await AIDietRecommendation.findOne({
+      _id: planId,
+      userId: userId,
+    });
+
+    if (!dietPlan) {
+      return res.status(404).json({ message: "Diet plan not found" });
+    }
+
+    // Get preferences for this plan
+    const preferences = dietPlan.preferences;
+
+    // Build prompt for regenerating a single meal
+    const prompt = `Generate a single ${mealType} meal with approximately ${targetCalories} calories.
+
+Requirements:
+- Calorie target: ${targetCalories} kcal
+- Dietary restrictions: ${preferences.dietaryRestrictions?.join(", ") || "None"}
+- Allergies to avoid: ${preferences.allergies?.join(", ") || "None"}
+- Health goals: ${preferences.healthGoals?.join(", ") || "General health"}
+- Cuisine preferences: ${preferences.cuisinePreferences?.join(", ") || "Any"}
+
+Return ONLY a valid JSON object (no markdown, no code blocks) with this structure:
+{
+  "mealType": "${mealType}",
+  "name": "meal name",
+  "description": "brief description",
+  "calories": ${targetCalories},
+  "macros": {
+    "protein": 0,
+    "carbs": 0,
+    "fats": 0
+  },
+  "ingredients": ["ingredient1", "ingredient2"],
+  "instructions": "cooking instructions"
+}`;
+
+    console.log(`🔄 Regenerating ${mealType} for plan ${planId}, day ${dayIndex}, meal ${mealIndex}`);
+
+    // Call OpenRouter API
+    const stream = await openrouter.chat.send({
+      model: "xiaomi/mimo-v2-flash:free",
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      stream: false,
+    });
+
+    const aiResponse = stream.choices[0]?.message?.content || "";
+    console.log("AI Response:", aiResponse);
+
+    // Parse the AI response
+    const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error("Invalid AI response format");
+    }
+
+    const newMeal = JSON.parse(jsonMatch[0]);
+
+    // Update the meal in the diet plan
+    dietPlan.recommendation.weeklyPlan[dayIndex].meals[mealIndex] = newMeal;
+    await dietPlan.save();
+
+    res.json({
+      success: true,
+      message: "Meal regenerated successfully",
+      data: {
+        meal: newMeal,
+        dayIndex,
+        mealIndex,
+      },
+    });
+  } catch (error) {
+    console.error("Error regenerating meal:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to regenerate meal",
+      error: error.message,
+    });
+  }
+};

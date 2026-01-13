@@ -7,7 +7,8 @@ const {
   rateRecommendation,
   deleteRecommendation,
   getUserPreferences,
-  saveUserPreferences
+  saveUserPreferences,
+  regenerateMeal
 } = require('../controllers/aiDietController');
 const { protect } = require('../middleware/auth');
 
@@ -31,5 +32,8 @@ router.route('/:id')
   .delete(deleteRecommendation);
 
 router.put('/:id/rate', rateRecommendation);
+
+// Regenerate a specific meal in a plan
+router.post('/regenerate-meal', regenerateMeal);
 
 module.exports = router;
