@@ -80,12 +80,13 @@ export default function AIDiet() {
     additionalNotes: "",
   });
 
-  // Calculate BMR and Daily Calorie Target
+  // Calculate BMR and Daily Calorie Target using Mifflin-St Jeor Equation
   const calculateDailyCalories = () => {
     const age = parseInt(formData.age);
     const weight = parseFloat(formData.weight); // in kg
     const height = parseFloat(formData.height); // in cm
     const gender = formData.gender;
+    const healthGoal = formData.healthGoals;
 
     if (!age || !weight || !height || !gender) {
       return null;
@@ -93,11 +94,11 @@ export default function AIDiet() {
 
     let bmr = 0;
 
-    // Calculate BMR using Harris-Benedict Equation
+    // Calculate BMR using Mifflin-St Jeor Equation (more modern & accurate)
     if (gender === "male") {
-      bmr = 88.362 + 13.397 * weight + 4.799 * height - 5.677 * age;
+      bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
     } else if (gender === "female") {
-      bmr = 447.593 + 9.247 * weight + 3.098 * height - 4.33 * age;
+      bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
     }
 
     // Activity Factor multipliers
@@ -111,10 +112,19 @@ export default function AIDiet() {
 
     const activityFactor = activityFactors[formData.activityLevel] || 1.55;
 
-    // Daily Calories = BMR × Activity Factor
-    const dailyCalories = Math.round(bmr * activityFactor);
+    // Calculate TDEE (Total Daily Energy Expenditure)
+    let tdee = Math.round(bmr * activityFactor);
 
-    return dailyCalories;
+    // Adjust calories based on health goal
+    let dailyCalories = tdee;
+    if (healthGoal === "Weight Loss") {
+      dailyCalories = tdee - 500; // 🔻 Weight loss: TDEE - 500 kcal
+    } else if (healthGoal === "Weight Gain" || healthGoal === "Weight Gain (Muscle Gain)") {
+      dailyCalories = tdee + 400; // 🔺 Weight gain: TDEE + 400 kcal (middle of 300-500 range)
+    }
+    // For "Weight Maintenance", dailyCalories remains as TDEE (±100 kcal is natural variance)
+
+    return Math.round(dailyCalories);
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -459,7 +469,9 @@ export default function AIDiet() {
                     {calculateDailyCalories() && (
                       <p className="text-xs text-green-600">
                         ✓ Calculated: {calculateDailyCalories()} calories/day
-                        (BMR × Activity Factor)
+                        {formData.healthGoals === "Weight Loss" && " (TDEE - 500 kcal)"}
+                        {formData.healthGoals === "Weight Gain (Muscle Gain)" && " (TDEE + 400 kcal)"}
+                        {formData.healthGoals === "Weight Maintenance" && " (TDEE)"}
                       </p>
                     )}
                     {!calculateDailyCalories() && (
