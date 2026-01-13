@@ -272,38 +272,47 @@ export default function WeeklyDietPlan() {
 
   return (
     <DashboardLayout role="user">
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-full overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/meal-plans")}
-              className="mb-2"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Meal Plans
-            </Button>
-            <h1 className="text-2xl md:text-3xl font-heading font-bold flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-primary" />
-              Diet Personalized Plan
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              {new Date(planData.createdAt).toLocaleDateString("en-US", {
-                month: "long",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button onClick={handleDownloadPDF} className="flex items-center gap-2">
-              <Download className="w-4 h-4" />
-              Download PDF
-            </Button>
-            <Badge variant="default" className="text-lg px-4 py-2">
-              7 days
-            </Badge>
+        <div className="space-y-3">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/meal-plans")}
+            size="sm"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Meal Plans
+          </Button>
+
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-base sm:text-2xl md:text-3xl font-heading font-bold flex items-start gap-1.5 sm:gap-2">
+                <Sparkles className="w-4 h-4 sm:w-6 sm:h-6 text-primary flex-shrink-0 mt-0.5" />
+                <span className="break-words leading-tight">Diet Personalized Plan</span>
+              </h1>
+              <p className="text-[11px] sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
+                {new Date(planData.createdAt).toLocaleDateString("en-US", {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+              <Button
+                onClick={handleDownloadPDF}
+                size="icon"
+                className="h-8 w-8 sm:h-10 sm:w-auto sm:px-4"
+              >
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline sm:ml-2">Download PDF</span>
+              </Button>
+
+              <Badge variant="default" className="text-xs sm:text-base px-2 py-1 sm:px-4 sm:py-1.5 whitespace-nowrap">
+                7 days
+              </Badge>
+            </div>
           </div>
         </div>
 
