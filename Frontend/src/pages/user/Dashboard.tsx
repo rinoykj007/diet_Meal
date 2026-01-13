@@ -211,20 +211,22 @@ export default function UserDashboard() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Active Meal Plans
-              </CardTitle>
-              <Salad className="w-5 h-5 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.activePlans}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Subscriptions running
-              </p>
-            </CardContent>
-          </Card>
+          <Link to="/meal-plans">
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Active Meal Plans
+                </CardTitle>
+                <Salad className="w-5 h-5 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.activePlans}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Subscriptions running
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
