@@ -23,7 +23,10 @@ import {
   CheckCircle,
   Clock,
   Package,
+  Download,
 } from "lucide-react";
+import { pdf } from '@react-pdf/renderer';
+import { MealPlanPDF } from '@/components/MealPlanPDF';
 
 interface Meal {
   mealType: string;
@@ -177,6 +180,31 @@ export default function WeeklyDietPlan() {
     setOrderModalOpen(true);
   };
 
+  const handleDownloadPDF = async () => {
+    if (!planData || !planData.recommendation) return;
+
+    try {
+      const blob = await pdf(<MealPlanPDF recommendation={planData.recommendation} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `meal-plan-${new Date().toISOString().split('T')[0]}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Success",
+        description: "Your meal plan has been downloaded!",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <DashboardLayout role="user">
@@ -224,9 +252,15 @@ export default function WeeklyDietPlan() {
               })}
             </p>
           </div>
-          <Badge variant="default" className="text-lg px-4 py-2">
-            7 days
-          </Badge>
+          <div className="flex items-center gap-3">
+            <Button onClick={handleDownloadPDF} className="flex items-center gap-2">
+              <Download className="w-4 h-4" />
+              Download PDF
+            </Button>
+            <Badge variant="default" className="text-lg px-4 py-2">
+              7 days
+            </Badge>
+          </div>
         </div>
 
         {/* Summary */}
